@@ -24,12 +24,6 @@ public abstract class Shape implements Prototype{
     public Object cloneShape()
     {
         Object clone = null;
-        try{
-            clone = super.clone();
-        }catch (CloneNotSupportedException e)
-        {
-            e.printStackTrace();
-        }
 
         return clone;
     }
