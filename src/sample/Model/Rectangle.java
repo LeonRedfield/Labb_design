@@ -16,5 +16,6 @@ public class Rectangle extends Shape {
 
     @Override
     void draw(Pane rootPane) {
+        //rootPane.getChildren().add((Rectangle)this.rectangle.clone());
     }
 }
