@@ -9,13 +9,14 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import sample.Model.Observer;
 
 import java.util.ArrayList;
 
 /**
  * Created by Teddy on 2017-03-08.
  */
-public class DrawView extends CanvasView{
+public class DrawView extends CanvasView implements Observer{
     private Scene scene;
     private VBox topContainer;
     private BorderPane rootPane;
@@ -145,5 +146,10 @@ public class DrawView extends CanvasView{
             gc.lineTo(e.getX(), e.getY());
             gc.stroke();
         });
+    }
+
+    @Override
+    public void update() {
+
     }
 }
