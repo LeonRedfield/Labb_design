@@ -24,7 +24,7 @@ public class DrawView extends CanvasView{
     private Slider widthSlider;
     private Label widthSliderLabel;
     private ColorPicker colorPicker;
-    private Button penButton, lineButton, ovalButton, polygonButton;
+    private Button penButton, lineButton, ovalButton, polygonButton, cursorButton;
     private Canvas canvas;
     private GraphicsContext gc;
 
@@ -44,7 +44,7 @@ public class DrawView extends CanvasView{
         scene = new Scene(rootPane, super.windowWidth, super.windowHeight);
         canvas = new Canvas(scene.getWidth(), scene.getHeight());
         gc = canvas.getGraphicsContext2D();
-        scene.setFill(Color.WHITE);
+        rootPane.setStyle("-fx-background-color: white");
         //System.out.println("sceneH - topContainerH =="+scene.getHeight() + "+"+ topContainer.getLayoutY()+" = " + (scene.getHeight()-topContainer.getMaxHeight()) );
         initiateMenu();
         initCanvas();
@@ -95,6 +95,7 @@ public class DrawView extends CanvasView{
     private void initiateMenu()
     {
         //items for toolbar:
+        cursorButton = new Button();
         penButton = new Button();
         lineButton = new Button();
         ovalButton = new Button();
@@ -118,14 +119,14 @@ public class DrawView extends CanvasView{
         });
 
         //set icons to buttons:
+        cursorButton.setGraphic(new ImageView("/sample/Resources/cursor.png"));
         penButton.setGraphic(new ImageView("/sample/Resources/pen.png"));
         lineButton.setGraphic(new ImageView("/sample/Resources/line.png"));
         ovalButton.setGraphic(new ImageView("/sample/Resources/oval.png"));
         polygonButton.setGraphic(new ImageView("/sample/Resources/polygon.png"));
 
         //add items to toolbar:
-        toolBar.getItems().addAll(penButton,lineButton,ovalButton, polygonButton, widthSlider, widthSliderLabel,colorPicker);
-
+        toolBar.getItems().addAll(cursorButton, penButton,lineButton,ovalButton, polygonButton, widthSlider, widthSliderLabel,colorPicker);
     }
 
     private  void initCanvas()
