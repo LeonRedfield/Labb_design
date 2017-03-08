@@ -1,16 +1,13 @@
 package sample.Model;
 
-import javafx.scene.layout.Pane;
-
 import java.util.Objects;
 
 /**
  * Created by Teddy on 2017-03-08.
  */
-public abstract class Shape implements Cloneable{
+public abstract class Shape implements Prototype{
     private String id;
     protected String type;
-    abstract  void draw(Pane pane);
 
     public String getType() {
         return type;
@@ -24,7 +21,7 @@ public abstract class Shape implements Cloneable{
         return id;
     }
 
-    public Object clone()
+    public Object cloneShape()
     {
         Object clone = null;
         try{
