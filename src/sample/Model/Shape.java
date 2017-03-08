@@ -5,7 +5,7 @@ import java.util.Objects;
 /**
  * Created by Teddy on 2017-03-08.
  */
-public abstract class Shape implements Prototype{
+public abstract class Shape implements Cloneable{
     private String id;
     protected String type;
 
@@ -21,9 +21,16 @@ public abstract class Shape implements Prototype{
         return id;
     }
 
-    public Object cloneShape()
+    @Override
+    public Object clone()
     {
         Object clone = null;
+        try{
+            clone = super.clone();
+        }catch (CloneNotSupportedException e)
+        {
+            e.printStackTrace();
+        }
 
         return clone;
     }
