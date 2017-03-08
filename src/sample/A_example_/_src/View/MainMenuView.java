@@ -72,7 +72,6 @@ public class MainMenuView extends Views{
         vsCom =  new Button("VS.COM");
         highscoreB = new Button ("HIGHSCORE");
         exitB = new Button("EXIT");
-        
     }
     
     private Background getBackground(int index)

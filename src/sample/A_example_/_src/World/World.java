@@ -14,7 +14,7 @@ import javafx.scene.control.MenuItem;
  *
  * @author Teddy
  */
-/*
+
 public class World extends Application{
     private static Stage window;
     private double windowWidth;
@@ -58,4 +58,4 @@ public class World extends Application{
     public static void main(String[] args) {       
         launch(args);
     }   
-}*/
+}

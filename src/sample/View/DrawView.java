@@ -1,6 +1,8 @@
 package sample.View;
 
 import javafx.scene.Scene;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
@@ -20,25 +22,44 @@ public class DrawView extends CanvasView{
     private Background stageBackground;
     private ToolBar toolBar;
     private Slider widthSlider;
+    private Label widthSliderLabel;
+    private ColorPicker colorPicker;
     private Button penButton, lineButton, ovalButton, polygonButton;
+    private Canvas canvas;
+    private GraphicsContext gc;
+
     public DrawView()
     {
         super();
-
         rootPane = new BorderPane();
         topContainer = new VBox();
         toolBar = new ToolBar();
-
         topContainer.getChildren().add(super.getAbstractMenubar());
         topContainer.getChildren().add(toolBar);
         rootPane.setTop(topContainer);
 
         //init toolmenu:
-        initiateMenu();
+
         //set Scene:
         scene = new Scene(rootPane, super.windowWidth, super.windowHeight);
+        canvas = new Canvas(scene.getWidth(), scene.getHeight());
+        gc = canvas.getGraphicsContext2D();
         scene.setFill(Color.WHITE);
+        //System.out.println("sceneH - topContainerH =="+scene.getHeight() + "+"+ topContainer.getLayoutY()+" = " + (scene.getHeight()-topContainer.getMaxHeight()) );
+        initiateMenu();
+        initCanvas();
 
+
+
+        rootPane.setCenter(canvas);
+    }
+
+    public Canvas getCanvas() {
+        return canvas;
+    }
+
+    public GraphicsContext getGc() {
+        return gc;
     }
 
     public Scene getScene()
@@ -78,8 +99,23 @@ public class DrawView extends CanvasView{
         lineButton = new Button();
         ovalButton = new Button();
         polygonButton = new Button();
-        // width slider
-        widthSlider = new Slider(1,5,1);
+        colorPicker = new ColorPicker();
+        colorPicker.setValue(Color.BLACK);
+        widthSlider = new Slider(1,10,1);
+        widthSlider.setShowTickLabels(true);
+        widthSlider.setShowTickMarks(true);
+        widthSliderLabel = new Label("1.0");
+        //set handlers:
+        colorPicker.setOnAction(e->{
+            gc.setStroke(colorPicker.getValue());
+        });
+
+        widthSlider.valueProperty().addListener(e->{
+            double value = widthSlider.getValue();
+            String valueStr = String.format("%.1f", value);
+            widthSliderLabel.setText(valueStr);
+            gc.setLineWidth(value*2);
+        });
 
         //set icons to buttons:
         penButton.setGraphic(new ImageView("/sample/Resources/pen.png"));
@@ -88,7 +124,25 @@ public class DrawView extends CanvasView{
         polygonButton.setGraphic(new ImageView("/sample/Resources/polygon.png"));
 
         //add items to toolbar:
-        toolBar.getItems().addAll(penButton,lineButton,ovalButton, polygonButton, widthSlider);
+        toolBar.getItems().addAll(penButton,lineButton,ovalButton, polygonButton, widthSlider, widthSliderLabel,colorPicker);
 
+    }
+
+    private  void initCanvas()
+    {
+        gc.setStroke(Color.BLACK);
+        gc.setLineWidth(1);
+
+
+        canvas.setOnMousePressed(e->{
+            gc.beginPath();
+            gc.lineTo(e.getX(), e.getY());
+            gc.stroke();
+        });
+
+        canvas.setOnMouseDragged(e->{
+            gc.lineTo(e.getX(), e.getY());
+            gc.stroke();
+        });
     }
 }
