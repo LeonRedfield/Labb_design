@@ -1,0 +1,2585 @@
+
+
+import java.awt.Dimension;
+import java.awt.Toolkit;
+import java.net.URL;
+import java.util.ArrayList;
+import javafx.animation.AnimationTimer;
+import javafx.application.Application;
+import static javafx.application.Application.launch;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
+import static javafx.scene.input.KeyCode.DOWN;
+import static javafx.scene.input.KeyCode.ESCAPE;
+import static javafx.scene.input.KeyCode.SPACE;
+import static javafx.scene.input.KeyCode.UP;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.Background;
+import static javafx.scene.layout.Background.EMPTY;
+import javafx.scene.layout.BackgroundImage;
+import javafx.scene.layout.BackgroundPosition;
+import javafx.scene.layout.BackgroundRepeat;
+import javafx.scene.layout.BackgroundSize;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.VBox;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
+import javafx.scene.media.MediaPlayer.Status;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+
+
+
+
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+
+/**
+ *
+ * @author Santos
+ */
+/**
+ * Model is responsible for all logic in game.
+ * @author Santos
+ */
+ class Model {
+    private Playfield playfield;
+    private Shapes currentBlock, nextBlock;
+    private int lines, score;
+    private long softDropTime;
+    private long hardDropTime;
+    private long rotateTime;
+    private long timeSinceLastMove;
+    private long gravitationSpeed, gravitationTime;
+    private int rows, columns;
+    private boolean isGameOver;
+    
+       /**
+     * Standard rows and columns are used
+     */
+    public Model() {
+        rows = 22;
+        columns = 10;
+        initModel();
+        
+    }
+    
+    /**
+     * Custom row and column size is used
+     * @param columns 
+     * @param rows 
+     */
+    public Model(int columns, int rows) {
+        this.columns = columns;
+        this.rows = rows;
+        initModel();
+    }
+    
+    private void initModel() {
+        playfield = new Playfield(rows, columns);
+        nextBlock = generateNextBlock();
+        currentBlock = generateNextBlock();
+        softDropTime = 0;
+        hardDropTime = 0;
+        timeSinceLastMove = 0;
+        lines = 0;
+        score = 0;
+        gravitationSpeed = 1000;
+        gravitationTime = 0;
+        rotateTime = 0;
+        isGameOver = false;
+    }
+    
+    /**
+     * Returns rows used in gamefield
+     * @return
+     */
+    public int getRows()
+    {
+        return rows;
+    }
+    
+    /**
+     * Returns columns used in gamefield
+     * @return 
+     */
+    public int getColumns()
+    {
+        return columns;
+    }
+    
+    
+    /**
+     * Returns gamefield in 2d array containing the current state of gamefield
+     * and currently played block. Empty blocks are represented by 0 and blocks 
+     * by 1.
+     * @return The array
+     */
+    public int[][] pixelGridToBeDrawn()
+    {        
+        int[][] tempgrid = new int[rows][columns];
+        
+        for(int i=0; i<currentBlock.pixelgrid.length; i++)
+        {
+            for(int j=0; j<currentBlock.pixelgrid[0].length; j++)
+            {
+                if(currentBlock.pixelgrid[i][j] == 1)
+                { 
+                    tempgrid[i+currentBlock.getY()][j+currentBlock.getX()] = 1; 
+                }            
+            }
+        }
+        
+        
+        for(int i=0; i<playfield.getPlayfield().length; i++)
+        {
+            for(int j=0; j<playfield.getPlayfield()[0].length; j++)
+            {
+                if(playfield.getPlayfield()[i][j] == 1 && tempgrid[i][j] ==0)
+                {
+                    tempgrid[i][j] = 1; 
+                }            
+            }
+        }            
+        return tempgrid;
+    }
+    
+    /**
+     * Updates the game. Gravitation, calculate scores ect. This is meant to be
+     * called by view-side.
+     */
+    public void modelUpdate()
+    {   
+        gravitation();
+        if(collision(currentBlock, playfield.getPlayfield()))
+        {
+            playfield.updateGrid(pixelGridToBeDrawn());
+            currentBlock = getNextBlock();                
+        }
+        checkLine();
+        
+        
+    }
+
+    /**
+     *  Rotates current block clockwise
+     */
+    public void rotateRight()
+    {
+        long tmpTime = System.currentTimeMillis();
+        if(tmpTime - rotateTime > 150) {
+            currentBlock.rotateRight();
+            rotateTime = System.currentTimeMillis();
+        }
+        while(currentBlock.getX() + currentBlock.getPixelGrid()[0].length > playfield.getColumns()) {
+            currentBlock.setX(currentBlock.getX()-1);
+        }
+        
+    }
+    
+    /**
+     * Rotates current block counter-clockwise
+     */
+    public void rotateLeft()
+    {
+        long tmpTime = System.currentTimeMillis();
+        if(tmpTime - rotateTime > 150) {
+            currentBlock.rotateLeft();
+            rotateTime = System.currentTimeMillis();
+        }
+        while(currentBlock.getX() + currentBlock.getPixelGrid()[0].length > playfield.getColumns()) {
+            currentBlock.setX(currentBlock.getX()-1);
+        }
+    }
+    
+    /**
+     * Makes a soft drop if it was more than 500ms since last soft drop
+     */
+    public void softDrop() {
+        long tmpTime = System.currentTimeMillis();
+        if(tmpTime - softDropTime > 150) {
+            currentBlock.setY( currentBlock.getY()+1 );
+            softDropTime = tmpTime;
+        }
+    }
+    /**
+     * Makes harddrop is it was more than 100ms since last harddrop
+     */        
+    public void hardDrop() {
+        long tmpTime = System.currentTimeMillis();
+        if(tmpTime - hardDropTime > 1) {
+            currentBlock.setY( currentBlock.getY()+1 );
+            hardDropTime = tmpTime;
+        }
+    }
+    
+    /**
+     * 
+     * @return isGameOver
+     */
+    public boolean isGameOver()
+    {
+        
+        for(int i=0; i<2; i++ )
+        {
+            for(int j=0 ; j< playfield.getColumns(); j++)
+            {
+                if(playfield.getPlayfield()[i][j] == 1)
+                {
+                    isGameOver = true;
+                }
+            }
+        }
+
+        return isGameOver;
+    }
+    
+    /**
+     * Makes left-move if it was more than 500 ms since last move
+     */
+    public void moveLeft() {
+        if(System.currentTimeMillis() - timeSinceLastMove > 100) {
+
+            if(currentBlock.getX() > 0){
+                    if(!moveLeftCollision()) {       
+                    
+                        currentBlock.setX(currentBlock.getX()-1);
+                    }   
+                }
+                      
+            timeSinceLastMove = System.currentTimeMillis();
+        }
+    }
+    
+    private boolean moveLeftCollision() {
+        
+        boolean collision = false;
+        for(int w = 0; w < currentBlock.pixelgrid.length; w++) {
+            for(int z = 0; z < currentBlock.pixelgrid[0].length; z++) {
+                if(currentBlock.pixelgrid[w][z] == 1) {
+                    if(playfield.getPlayfield()[w+currentBlock.getY()][z+currentBlock.getX()-1] == 1) {
+                        collision = true;
+                    }
+                }
+            }
+        }
+        return collision;
+    }
+    
+    /**
+     * Makes right-move if it was more than 500 ms since last move
+     */
+    public void moveRight() {
+        if(System.currentTimeMillis() - timeSinceLastMove> 100) {
+                if(currentBlock.getX() < (playfield.getColumns() ) - currentBlock.getPixelGrid()[0].length) {
+                    if(!moveRightCollision() ) {
+                        currentBlock.setX(currentBlock.getX()+1);
+                    }
+                }
+                
+            
+            timeSinceLastMove = System.currentTimeMillis();
+        }
+    }
+    
+    private boolean moveRightCollision() {
+        boolean collision = false;
+        for(int w = 0; w < currentBlock.pixelgrid.length; w++) {
+            for(int z = 0; z < currentBlock.pixelgrid[0].length; z++) {
+                if(currentBlock.pixelgrid[w][z] == 1) {
+                    if(playfield.getPlayfield()[w+currentBlock.getY()][z+currentBlock.getX()+1] == 1) {
+                        collision = true;
+                    }
+                }
+            }
+        }
+        return collision;
+    }
+    
+    /**
+     * Reinitiates all values
+     */
+    public void reset() {
+        initModel();
+    }
+    
+    /**
+     * Returns lines-status
+     * @return 
+     */
+    public int getLines() {
+        return lines;
+    }
+    
+    /**
+     * Returns score status
+     * @return 
+     */
+    public int getScore() {
+        return score;
+    }
+    
+    /**
+     * Returns playfield represented by 2d array. Currently played block is not
+     * in here. 
+     * @return The gamefield array[y][x]
+     */
+    public int[][] getPlayField()
+    {
+        return playfield.getPlayfield();
+    }
+    
+    /**
+     * Returns array representing the next-block grid in 2d array. 0 represents
+     * empty space and 1 represents filled square. can be 2x2, 2x3, 3x2 or 4x4.
+     * @return array[y][x]
+     */
+    public int[][] getNextBlockPixelGrid()
+    {
+        return nextBlock.pixelgrid;
+    }
+    
+    
+
+    
+    private Shapes generateNextBlock() {
+        Shapes newShape;
+        
+        int randomNum = (int)(Math.random()* 7);
+        switch(randomNum) {
+            case 0:
+               newShape = new IBlock();
+               break;
+            case 1:
+               newShape = new JBlock();
+               break;
+            case 2:
+               newShape = new LBlock();
+               break;
+            case 3:
+               newShape = new OBlock();
+               break;
+            case 4:
+               newShape = new SBlock();
+               break;
+            case 5:
+               newShape = new TBlock();
+               break;
+            case 6:
+               newShape = new ZBlock();
+               break;
+            default:
+                newShape = new OBlock();
+        }
+        
+        return newShape;
+    }
+    
+    private Shapes getNextBlock() {
+        Shapes returnBlock = nextBlock;
+        
+        nextBlock = generateNextBlock();
+        
+        return returnBlock;
+    }
+    
+    private void gravitation() {
+        
+        if(System.currentTimeMillis() - gravitationTime > gravitationSpeed) {
+            currentBlock.setY(currentBlock.getY()+1);
+            gravitationTime = System.currentTimeMillis();
+            
+        }
+    }
+    
+    private boolean collision(Shapes currentBlock, int[][] playfield) {
+        boolean collision = false;
+        for(int i = 0; i < currentBlock.getPixelGrid().length; i++) 
+        {
+            for(int j = 0; j < currentBlock.getPixelGrid()[0].length; j++) 
+            {
+                if(currentBlock.getPixelGrid()[i][j] == 1) 
+                {
+                    int y = currentBlock.getY();
+                    int x = currentBlock.getX();
+                    if(/*playfield[y+i+1][x+i] == 1 ||*/ currentBlock.hitBottom(playfield.length)) 
+                    {
+                        collision = true;
+                        
+                    } else {
+                        for(int w = 0; w < currentBlock.pixelgrid.length; w++) {
+                            for(int z = 0; z < currentBlock.pixelgrid[0].length; z++) {
+                                if(currentBlock.pixelgrid[w][z] == 1) {
+                                    if(playfield[w+currentBlock.getY()+1][z+currentBlock.positionX] == 1) {
+                                        collision = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return collision;
+    }
+  
+    private void updateScore(int addScore, int addLine) {
+        score += addScore;
+        lines += addLine;
+    }
+    
+    private int checkLine() {
+        
+        int line = playfield.getColumns();
+        int linesInField = 0;
+        int linesInRow = 0;
+        
+        for(int i = 0; i < playfield.getRows(); i++) {
+            for(int j = 0; j < playfield.getColumns(); j++) {
+                if(playfield.getPlayfield()[i][j]== 1) {
+                    linesInRow++;
+                    
+                }
+                
+            }
+            if(linesInRow >= playfield.getColumns()) {
+                linesInField++;
+                clearLine(i);
+                pullLineDown(i);
+            }
+            
+            linesInRow = 0;
+        }
+        
+        updateScore(calculateScore(linesInField), linesInField);
+        
+        
+        return 0;
+    }
+    
+    private int calculateScore(int lines) {
+        
+        
+        return lines*40;
+    }
+    
+    private void clearLine(int y) {
+        int[][] tempField = playfield.getPlayfield().clone();
+        for(int x = 0; x < playfield.getColumns()-1; x++) {
+            tempField[y][x] = 0;
+        }
+        playfield.updateGrid(tempField);
+        
+    }
+    
+    private void pullLineDown(int y) {
+        int [][] tempField = playfield.getPlayfield().clone();
+        for(int i = y; i > 0; i--) {
+            System.arraycopy(playfield.getPlayfield()[i-1], 0, tempField[i], 0, playfield.getColumns());
+        }
+        //Clear top line
+        for(int w = 0; w < tempField[0].length; w++) {
+            tempField[0][w] = 0;
+        }
+        playfield.updateGrid(tempField);
+        
+    }
+    
+    private void setNewSpeed(int newSpeed) {
+        gravitationSpeed = newSpeed;
+    }
+    
+    private void setView(Views view) {
+        
+    }
+    
+    
+}
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+
+/**
+ *
+ * @author Teddy
+ */
+abstract class Shapes {
+    protected int positionX;
+    protected int positionY;
+    protected int pixelgrid[][];
+    
+    public int[][] getPixelGrid()
+    {
+        return pixelgrid;
+    }
+    
+    public int getY() {
+        return positionY;
+    }
+
+    public int getX() {
+        return positionX;
+    }
+
+    public void setY(int Y) {
+        positionY = Y;
+    }
+
+    public void setX(int X) {
+        positionX = X;
+    }
+    public void printBlock()
+    {
+        for(int i=0; i<pixelgrid.length;i++)
+        {
+            for(int j=0; j<pixelgrid.length;j++)
+            {
+                System.out.print(pixelgrid[i][j]);
+            }
+            System.out.print("\n");
+        }
+    }
+    
+    public void rotateLeft()
+    {
+        int temp[][] = new int[3][3];
+        temp =rotateRightXThree();
+        pixelgrid = remodelShape(temp);
+    }
+    
+    private int[][] rotateRightXThree()
+    {
+        int temp[][] = new int[3][3];
+        int temp2[][] = new int[3][3];
+        for (int i = 0; i < pixelgrid.length; i++) 
+        {
+            for (int j = 0; j < pixelgrid[0].length; j++) 
+            {
+                temp[j][pixelgrid.length-1-i] = pixelgrid[i][j];
+            }
+        }
+        
+        for (int i = 0; i < temp.length; i++) 
+        {
+            for (int j = 0; j < temp[0].length; j++) 
+            {
+                temp2[j][temp.length-1-i] = temp[i][j];
+            }
+        }
+        for (int i = 0; i < temp2.length; i++) 
+        {
+            for (int j = 0; j < temp2[0].length; j++) 
+            {
+                temp[j][temp2.length-1-i] = temp2[i][j];
+            }
+        }
+
+        return temp;
+    }
+    
+    public void rotateRight()
+    {
+        //in procces:
+        int temp[][] = new int[3][3];
+        
+        for (int i = 0; i < pixelgrid.length; i++) 
+        {
+            for (int j = 0; j < pixelgrid[0].length; j++) 
+            {
+                temp[j][pixelgrid.length-1-i] = pixelgrid[i][j];
+            }
+        }   
+        pixelgrid = remodelShape(temp);
+    }
+    /**
+     *  recieves an 3x3 2d array, temp[][],and trims it to and 2x3 or 3x2 array, 
+     *  dending of the shape of 1:s in the grid. It returns the trimmed array.
+     * @param temp
+     * @return remodel
+     */
+    protected int[][] remodelShape(int[][] temp)
+    {
+        //Remodel:
+        int[][] remodel;
+        int[] ones = new int[temp.length];
+        int[] column = new int[temp[0].length];
+        int beginatC = 0;
+        int maxC = 0;
+        int beginatR = 0;
+        int maxR =0;
+        int rows = 0, columns =0 ;
+        //count painted rows and column:
+        for(int i = 0; i < temp.length; i++) 
+        { 
+            for(int j=0; j<temp[0].length; j++)
+            {
+                if(temp[i][j] == 1)
+                {
+                    ones[i] +=1;                    
+                }
+                
+                if(temp[j][i] == 1)
+                {
+                   column[i]+=1;
+                } 
+            }
+        }
+        
+       //set settings for remodel and loop:
+        if(column[0] >=1 && column[2] >=1)
+        {
+            beginatC = 0; 
+            maxC = temp[0].length;
+            columns = 3;
+        }
+        else if(column[0] >=1)
+        {
+            beginatC = 0;
+            maxC = temp[0].length -1;
+            columns = 2;
+        }
+        else
+        {
+            beginatC = 1; 
+            maxC = temp[0].length;
+            columns = 2;
+        }
+        
+        if(ones[0] >= 1 && ones[2] >= 1)
+        {
+            rows = 3;
+            beginatR = 0;
+            maxR = temp.length;
+        }
+        else if(ones[0] >= 1)
+        {
+            rows = 2;
+            beginatR = 0;
+            maxR = temp.length-1;
+            
+        }
+        else
+        {
+            rows = 2;
+            beginatR = 1;
+            maxR = temp.length;
+        }
+        //set rows and columns to remodel:
+        remodel = new int[rows][columns];
+        //begin to remodel;
+        for(int i = beginatR; i < maxR; i++) 
+        { 
+            for(int j = beginatC; j<maxC; j++)
+            {
+                if(beginatR < 1 && beginatC < 1)
+                {
+                    remodel[i][j] = temp[i][j];
+                }
+                else if(beginatR < 1 && beginatC >= 1)
+                {
+                    remodel[i][j-1] = temp[i][j];
+                }
+                else if(beginatR >= 1 && beginatC < 1)
+                {
+                    remodel[i-1][j] = temp[i][j];
+                }
+                else
+                {
+                    remodel[i-1][j-1] = temp[i][j];
+                } 
+            }
+        }
+        return remodel;
+    }
+    
+    public boolean hitBottom(int playfieldlenght)
+    {
+        
+        int bottom = 0;
+        for(int i=0; i<getPixelGrid().length; i++)
+        {
+            for(int j=0; j<getPixelGrid()[0].length; j++)
+            {
+                if(getPixelGrid()[i][j] == 1)
+                {
+                    bottom = i;
+                }
+            }
+        }
+
+        if(playfieldlenght - 1 <= bottom + getY())
+        {
+            //System.out.println("Hitted bottom at : " + bottom);
+            return true;
+        }
+        else
+        {
+            return false;
+        }      
+    }
+}
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+
+/**
+ *
+ * @author Teddy
+ */
+ class IBlock extends Shapes{
+    private boolean isrotated;
+    private int[][] IblockRotated;
+    private int[][] IblockNormalState;
+    
+    public IBlock()
+    {
+        pixelgrid = new int[][]{
+            {1}, 
+            {1},
+            {1}, 
+            {1} 
+        };
+        IblockNormalState = pixelgrid;
+        IblockRotated = new int[][]{
+            {1, 1, 1, 1}
+        };          
+    }
+
+    @Override
+    public void rotateLeft() {
+        if(!isrotated)
+        {
+            pixelgrid = IblockRotated;
+            isrotated = true;
+        }
+        else
+        {
+            pixelgrid = IblockNormalState;
+            isrotated = false;
+        }
+    }
+    
+    public void printBlock()
+    {
+        for(int i=0; i<pixelgrid.length;i++)
+        {
+            for(int j=0; j<pixelgrid.length;j++)
+            {
+                System.out.print(pixelgrid[i][j]);
+            }
+            System.out.print("\n");
+        }
+    }
+
+    @Override
+    public void rotateRight() {
+        if(!isrotated)
+        {
+            pixelgrid = IblockRotated;
+            isrotated = true;
+        }
+        else
+        {
+            pixelgrid = IblockNormalState;
+            isrotated = false;
+        }
+    }
+
+}
+
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+/**
+ *
+ * @author Teddy
+ */
+ class JBlock extends Shapes{
+    public JBlock()
+    {
+        
+        pixelgrid = new int[][]{
+            {0, 1, 0}, 
+            {0, 1, 0},
+            {1, 1, 0}
+        };
+        pixelgrid = remodelShape(pixelgrid);
+    }
+
+
+}
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+
+/**
+ *
+ * @author Teddy
+ */
+ class LBlock extends Shapes{
+    public LBlock()
+    {
+        pixelgrid = new int[][]{
+            {0, 1, 0}, 
+            {0, 1, 0},
+            {0, 1, 1}
+        };
+        pixelgrid = remodelShape(pixelgrid);
+    }
+
+
+    
+    public void printBlock()
+    {
+        for(int i=0; i<pixelgrid.length;i++)
+        {
+            for(int j=0; j<pixelgrid.length;j++)
+            {
+                System.out.print(pixelgrid[i][j]);
+            }
+            System.out.print("\n");
+        }
+    }
+
+
+}
+
+
+
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+
+/**
+ *
+ * @author Teddy
+ */
+ class OBlock extends Shapes{
+    
+    public OBlock()
+    {
+        pixelgrid = new int[][]{
+            {1, 1}, 
+            {1, 1}
+        };
+    }
+
+
+
+
+}
+
+
+
+
+
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+
+/**
+ *
+ * @author Santos
+ */
+ class Playfield {
+    private int[][] playfield;
+    private int rows;
+    private int columns;
+    
+    public Playfield(int rows, int columns) {
+        this.rows = rows;
+        this.columns = columns;
+        playfield = initPlayfield(rows, columns);    
+    }
+    
+    private int[][] initPlayfield(int rows, int columns) {
+        int[][] newPlayfield = new int[rows][columns];
+        for(int i = 0; i < newPlayfield.length; i++) {
+            for(int j = 0; j < newPlayfield[0].length; j++) {
+                newPlayfield[i][j] = 0;
+            }
+        }
+        
+        return newPlayfield;
+    }
+    
+    public int getColumns() {
+        return columns;
+    }
+    public int getRows() {
+        return rows;
+    }
+    
+    public int [][] getPlayfield() {
+        return playfield;
+    }
+    
+    public void updateGrid(int[][] newgrid)
+    { 
+        for(int i=0; i<playfield.length;i++)
+        {
+            for(int j=0; j<playfield[0].length;j++)
+            {
+                if(newgrid[i][j] ==1 && playfield[i][j] == 0)
+                {
+                    playfield[i][j] = newgrid[i][j];
+                }
+            }           
+        }
+        
+    }
+    
+    public void resetPlayGrid()
+    {
+        
+    }
+}
+
+
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+
+/**
+ *
+ * @author Teddy
+ */
+ class SBlock extends Shapes{
+    public SBlock()
+    {
+        pixelgrid = new int[][]{
+            {0, 1, 1}, 
+            {1, 1, 0},
+            {0, 0, 0}
+        };
+        pixelgrid = remodelShape(pixelgrid);
+    }
+
+
+}
+
+
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+
+/**
+ *
+ * @author Teddy
+ */
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+
+/**
+ *
+ * @author Teddy
+ */
+ class TBlock extends Shapes{
+    public TBlock()
+    {
+        pixelgrid = new int[][]{
+            {0, 1, 0}, 
+            {1, 1, 1},
+            {0, 0, 0}
+        };
+        pixelgrid = remodelShape(pixelgrid);
+    }
+
+}
+
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+
+/**
+ *
+ * @author Teddy
+ */
+ class ZBlock extends Shapes{
+    public ZBlock()
+    {
+        
+        pixelgrid = new int[][]{
+            {1, 1, 0}, 
+            {0, 1, 1},
+            {0, 0, 0}
+        };
+        pixelgrid = remodelShape(pixelgrid);
+    }
+}
+
+
+
+
+
+
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+
+/**
+ *
+ * @author Teddy
+ */
+ class GamePlayController {
+    private Model model;
+    private GamePlayView gameplayview;
+    private Button[] buttons;
+    private GamePlayHandler handler;
+    private GamePlayButtonHandler buttonhandler;
+    
+    public GamePlayController(Model model, GamePlayView gameplayview) {
+        this.model = model;
+        this.gameplayview = gameplayview;
+        handler = new GamePlayHandler();
+        buttons = gameplayview.getButtons();
+        buttonhandler = new GamePlayButtonHandler();
+    }
+    
+    public GamePlayHandler getHandler()
+    {
+        return handler;
+    }
+    
+    public GamePlayButtonHandler getButtonHandler()
+    {
+        return buttonhandler;
+    }
+    
+    private class GamePlayHandler implements EventHandler<KeyEvent>
+    {
+
+        @Override
+        public void handle(KeyEvent event) 
+        {
+            
+                switch(event.getCode())
+                {
+                    case LEFT:
+                        model.moveLeft();
+                        break;
+                    case RIGHT: 
+                        model.moveRight();
+                        break;
+                    case UP:
+                        model.rotateRight();
+                        break;
+                    case DOWN:
+                        model.softDrop();
+                        break;
+                    case CONTROL:
+                        model.rotateLeft();
+                        break;
+                    case SPACE:
+                        model.hardDrop();
+                        break;
+                    case ESCAPE:                
+                        ViewsList.changeView(3);
+                        World.getWindow().setScene(ViewsList.getCurrentViewScene());              
+                        break;
+                    default:                     
+                }
+            event.consume();
+        }        
+    }
+    
+    private class GamePlayButtonHandler implements EventHandler<KeyEvent>
+    {
+
+        @Override
+        public void handle(KeyEvent event) {
+            
+                if(event.getSource() == buttons[0])
+                {
+                    ViewsList.resetViews();
+                    ViewsList.changeView(1);
+                    World.getWindow().setScene(ViewsList.getCurrentViewScene()); 
+                }
+                else if(event.getSource() == buttons[1])
+                {
+                    ViewsList.changeView(4);
+                    World.getWindow().setScene(ViewsList.getCurrentViewScene()); 
+                }
+        }       
+    }
+}
+
+
+
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+
+/**
+ *
+ * @author Teddy
+ */
+ class HighScoreController {
+    private HighScoreView highscoreview;
+    private Model model;
+    private Button[] buttons;
+    private MusicHandler music;
+    private HighScoreHandler handler;  
+    
+    public HighScoreController(HighScoreView highscoreview)
+    {
+        this.highscoreview = highscoreview;
+        handler = new HighScoreHandler();
+    }
+    
+    public HighScoreHandler getHandler()
+    {
+        return handler;
+    }
+     private class HighScoreHandler implements EventHandler<ActionEvent> 
+    {
+        
+        @Override
+        public void handle(ActionEvent event) 
+        {
+            TextField enteredField = highscoreview.getPlayername();
+            
+           
+            if(enteredField.getText() != null && enteredField.getText().trim().isEmpty()) {
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setHeaderText("Name field is empty");
+                alert.setTitle("No name entered");
+                alert.show();
+                throw new NoNameEnteredException("No Name is entered");
+            }
+            else {
+            ViewsList.resetViews();
+            ViewsList.changeView(0);
+            World.getWindow().setScene(ViewsList.getCurrentViewScene());
+            event.consume();
+            //Views mainScene = new MainMenuView();
+            //rootwindow.setScene(mainScene.getScene());
+            }
+        }       
+    }
+}
+
+
+
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+
+/**
+ *
+ * @author Teddy
+ */
+ class MainMenuController {
+    private Model model;
+    private MainMenuView mainmenuview;
+    private Button[] buttons;
+    private MainMenuHandler handler;
+
+    public MainMenuController(Model model, MainMenuView mainmenuview)
+    {
+        this.model = model;
+        this.mainmenuview = mainmenuview;
+        this.buttons = mainmenuview.getButtons();
+        handler = new MainMenuHandler();
+    }
+    
+    public MainMenuHandler getHandler()
+    {
+        return handler;
+    }
+    
+    private class MainMenuHandler implements EventHandler<KeyEvent>
+    {
+        
+        @Override
+        public void handle(KeyEvent event) 
+        {            
+                
+            if(event.getSource() == buttons[0])
+                {
+                    ViewsList.changeView(1);
+                    World.getWindow().setScene(ViewsList.getCurrentViewScene()); 
+                    
+                }
+                else if(event.getSource() == buttons[1])
+                {
+                    System.out.println("VsCom");
+                }
+                else if(event.getSource() == buttons[2])
+                {
+                    System.out.println("HighScore");
+                }
+                else if(event.getSource() == buttons[3])
+                {               
+                    World.getWindow().close();
+                }
+                event.consume();
+                
+            
+            
+        }
+        
+    }
+    
+}
+
+
+
+/**
+ *
+ * @author Teddy
+ */
+ class MenuBarController {
+    private Views currentview;
+    private MenuBarHandler menuhandler;
+    private MenuItem[] items;
+    private static boolean gameplaystop;
+    private static GamePlayView gameplayview;
+
+    
+    public MenuBarController(Views view)
+    {
+        this.currentview = view;
+        menuhandler = new MenuBarHandler();
+        items = currentview.getMenuItems();
+
+    }
+    
+
+    public MenuBarHandler getHandler()
+    {
+        return menuhandler;
+    }
+    
+
+    private class MenuBarHandler implements EventHandler<ActionEvent>
+    {
+
+        @Override
+        public void handle(ActionEvent event) {
+            
+           if(event.getSource() == items[0])
+            {
+                if(ViewsList.getCurrentViewIndex() == 0)
+                {              
+                    ViewsList.changeView(1);
+                    World.getWindow().setScene(ViewsList.getCurrentViewScene()); 
+                }
+            }
+            else if(event.getSource() == items[1])
+            {
+                if(ViewsList.getCurrentViewIndex() == 2)
+                {              
+                    ViewsList.changeView(3);
+                    World.getWindow().setScene(ViewsList.getCurrentViewScene()); 
+                }
+            }
+            else if(event.getSource() == items[2])
+            {
+                if(ViewsList.getCurrentViewIndex() == 3)
+                {              
+                    
+                    ViewsList.changeView(2);
+                    World.getWindow().setScene(ViewsList.getCurrentViewScene());
+                }
+            }
+            else if(event.getSource() == items[3])
+            {
+                if(currentview == ViewsList.getCurrentViewByIndex(2))
+                {              
+                    gameplayview = (GamePlayView) currentview;
+                    gameplayview.stopGamePlayTimer();     
+                    System.out.println("innne i gamplay och tiden är stoppad");
+                    gameplaystop = true;
+                }
+               else
+               {
+                   gameplaystop = false;
+               }
+                ConfirmationBox.showPictureBox("Instructions", "Ready to play now?", "tetriscontrols.png");
+                
+                if(gameplaystop)
+                {
+                     gameplayview.startGamePlayTimer();
+                }
+                              
+            }
+           
+        }
+        
+    }
+     
+}
+
+
+
+
+class ConfirmationBox {
+    
+    static boolean answer;
+    
+    public static boolean showBox(String title, String textmessage)
+    {
+        Stage window = new Stage();
+        //this will block interation with other windows until the current window is done.
+        window.initModality(Modality.APPLICATION_MODAL); 
+        window.setTitle(title);
+        window.setMinWidth(200);
+        window.setMinHeight(100);
+        //create label for textmessage:
+        Label label = new Label(title);
+        label.setText(textmessage);
+        //create option buttons:
+        Button yesB = new Button("Yes");
+        Button noB = new Button("No");
+        
+        yesB.setOnAction(e -> {
+            answer = true;
+            window.close();
+        });
+        
+        noB.setOnAction(e -> {
+            answer = false;
+            window.close();
+        });
+        //create box for buttons:
+        FlowPane bottomPane = new FlowPane();
+        bottomPane.setHgap(10);
+        bottomPane.setPadding(new Insets(5,5,5,5));
+        bottomPane.getChildren().add(yesB);
+        bottomPane.getChildren().add(noB);
+        bottomPane.setAlignment(Pos.CENTER);
+        //set nodes:
+        BorderPane layout = new BorderPane();
+        layout.setCenter(label);
+        layout.setBottom(bottomPane);
+        //create scene:
+        Scene scene = new Scene(layout);
+        window.setScene(scene);
+        window.showAndWait();
+       
+        return answer; 
+    }
+    
+    public static boolean showPictureBox(String title, String textmessage, String picname)
+    {
+        Stage window = new Stage();
+        //this will block interation with other windows until the current window is done.
+        window.initModality(Modality.APPLICATION_MODAL); 
+        window.setTitle(title);
+        window.setMinWidth(1200);
+        window.setMinHeight(800);
+        //create label for textmessage:
+        Label label = new Label(title);
+        label.setText(textmessage);
+        //create option buttons:
+        Button yesB = new Button("Yes");
+        
+        yesB.setOnAction(e -> {
+            answer = true;
+            window.close();
+        });
+        
+        //create box for buttons:
+        FlowPane bottomPane = new FlowPane();
+        bottomPane.setHgap(10);
+        bottomPane.setPadding(new Insets(5,5,5,5));
+        bottomPane.getChildren().add(yesB);
+        bottomPane.setAlignment(Pos.CENTER);
+        
+        VBox picPane = new VBox();
+        picPane.setMinSize(700, 600);
+       //create pic as background:
+        String imagepath;
+        
+        imagepath = MenuBarController.class.getResource(picname).toExternalForm();
+        javafx.scene.image.Image image = new javafx.scene.image.Image(imagepath);
+        BackgroundSize backgroundSize = new BackgroundSize(window.getWidth(), window.getHeight()/1.2, true, true, true, false);
+        BackgroundImage backgroundImage = new BackgroundImage(image, BackgroundRepeat.REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.CENTER, backgroundSize);
+        Background backgroud = new Background(backgroundImage);
+        
+        picPane.setBackground(backgroud);
+                
+        //set nodes:
+        BorderPane layout = new BorderPane();
+        layout.setTop(picPane);
+        layout.setCenter(label);       
+        layout.setBottom(bottomPane);
+        //create scene:
+        Scene scene = new Scene(layout);
+        window.setScene(scene);
+        window.showAndWait();
+       
+        return answer; 
+    }
+    
+
+}
+
+
+
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+
+/**
+ *
+ * @author Santos
+ */
+ class NoNameEnteredException extends RuntimeException{
+    
+    public NoNameEnteredException(String msg) {
+        
+    }
+    
+    public NoNameEnteredException() {
+        super();
+    }
+}
+
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+/**
+ *
+ * @author Teddy
+ */
+ class PauseMenuController {
+    private PauseMenuView pauseview;
+    private Button[] buttons;
+    private PauseHandler handler;
+    
+    public PauseMenuController(PauseMenuView pauseview) {
+        this.pauseview = pauseview;
+        this.buttons = pauseview.getButtons();
+        handler = new PauseHandler();
+        
+    }
+    
+    public PauseHandler getHandler()
+    {
+        return handler;
+    }
+    
+    
+    private class PauseHandler implements EventHandler<KeyEvent>
+    {
+
+        @Override
+        public void handle(KeyEvent event) 
+        {
+            System.out.println("Keyinput: " + event.getCharacter());
+
+                if(event.getSource() == buttons[0])
+                {
+                    System.out.println("Inne i PauseHandler");
+                    ViewsList.changeView(2);
+                    System.out.println(ViewsList.getCurrentViewIndex());
+                    World.getWindow().setScene(ViewsList.getCurrentViewScene());
+                    System.out.println("Returning to Gameplay\n");
+                }
+                else
+                {
+                    System.out.println("Execption here maybe");
+                }
+            event.consume();
+            
+            
+            
+        }       
+    }
+}
+
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+
+/**
+ *
+ * @author Teddy
+ */
+ class SettingsController {
+    private SettingsView settingsview;
+    private Model model;
+    private Button[] buttons;
+    private MusicHandler music;
+    private SettingsButtonHandler handler;
+    private ViewsList viewList;
+    
+    public SettingsController(Model model, SettingsView settingsview)
+    {
+        this.model = model;
+        this.settingsview = settingsview;
+        this.buttons = settingsview.getButtons();
+        music = new MusicHandler();
+        handler = new SettingsButtonHandler();
+    }
+    
+    public SettingsButtonHandler gethandler()
+    {
+        return handler;
+    }
+    
+    
+    private class SettingsButtonHandler implements EventHandler<KeyEvent>
+    {
+        
+        @Override
+        public void handle(KeyEvent event) {
+            
+           if(event.getSource() == buttons[0])
+           {
+               music.playMusic(0);
+           }
+           else if(event.getSource() == buttons[1])
+           {
+               music.playMusic(0);
+           }
+           else if(event.getSource() == buttons[2])
+           {
+               music.playMusic(0);
+           }
+           else if(event.getSource() == buttons[3])
+           {
+               music.stopMusic();
+           }
+           else if(event.getSource() == buttons[4])
+           {
+                ViewsList.changeView(2);
+                World.getWindow().setScene(ViewsList.getCurrentViewScene());
+                
+           }
+           event.consume();
+        }
+        
+    }
+}
+
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+
+/**
+ *
+ * @author Teddy
+ */
+ class GamePlayView extends Views{
+    private BorderPane rootPane;
+    private GridPane playField;
+    private VBox ScoreandLevel;
+    private Canvas[][] canvas;
+    private Canvas[][] nextblockCanvas;
+    private GamePlay gameplay;
+    private GridPane nextblockPane;
+    private Model model;
+    private int[][] pixelplayfield;
+    private int[][] pixelnextBlock;
+    private VBox gameoverPane;
+    private Button playagainYes;
+    private Button playagainNo;
+    private Label gameoverMessage;
+    private GamePlayController keycontrol;
+    private int scorePoint;
+    private int Linesint;
+    private Label score;
+    private Label lines;
+    
+    public GamePlayView(Model model)
+    {
+        this.model = model;
+        initView();
+        rootPane.setTop(menubar);
+    }
+    
+    public void startGamePlayTimer()
+    {
+        gameplay.start();
+    }
+    public void stopGamePlayTimer()
+    {
+        gameplay.stop();
+    }
+    
+    public Button[] getButtons()
+    {
+        initiateNodes();
+        Button[] buttons = {playagainYes, playagainNo};
+        return buttons;
+    }
+    
+    public void resetGame()
+    {
+        rootPane.getChildren().remove(0, rootPane.getChildren().size());
+        model.reset();
+        initView();
+    }
+    
+    public void updateFromModel()
+    {
+          
+        pixelplayfield = model.pixelGridToBeDrawn();
+        pixelnextBlock = model.getNextBlockPixelGrid();
+        model.modelUpdate();
+        scorePoint = model.getScore();
+        Linesint = model.getLines();
+        score = new Label("Score: " + Integer.toString(scorePoint));
+        lines = new Label("Lines: " + Integer.toString(Linesint));
+        ScoreandLevel.getChildren().remove(0, ScoreandLevel.getChildren().size());
+        ScoreandLevel.getChildren().addAll(score, lines);
+    }
+    
+    
+    private void initView()
+    {
+        scorePoint = 0;
+        Linesint = 0;
+        initiatePanes();
+        scene = new Scene(rootPane, windowWidth, windowHeight);
+        initiateNodes();
+        setHandlers();
+        gameplay = new GamePlay();
+        gameplay.start();               
+        gameoverPane.getChildren().addAll(gameoverMessage, playagainYes, playagainNo);
+        gameoverPane.setAlignment(Pos.CENTER);
+
+    }
+    
+    private void initiatePanes()
+    {
+        rootPane = new BorderPane();
+        
+        rootPane.setStyle("-fx-background-color: #ffa500;");
+        playField = new GridPane();
+        initiateCanvas();
+        gameoverPane = new VBox(20);
+        gameoverPane.setMaxSize(windowWidth/4, windowHeight/4);
+        gameoverPane.setStyle("-fx-background-color: #c0c0c0;");
+        //
+        ScoreandLevel = new VBox();
+        score = new Label("Score: " + Integer.toString(scorePoint));
+        lines = new Label("Lines: " + Integer.toString(Linesint));
+        ScoreandLevel.getChildren().addAll(score, lines);
+        rootPane.setCenter(playField);
+        rootPane.setRight(nextblockPane);
+        rootPane.setLeft(ScoreandLevel);
+    }
+    
+    private void initiateCanvas()
+    {
+        canvas = new Canvas[model.getRows()][model.getColumns()];
+        for(int i=0 ; i< canvas.length; i++)
+        {
+            for(int j=0; j<canvas[0].length; j++)
+            {
+                canvas[i][j] = new Canvas();
+                canvas[i][j].setWidth(40);
+                canvas[i][j].setHeight(40);
+                playField.add(canvas[i][j], j, i);
+            }
+        }
+        playField.setMaxSize(canvas[0][0].getWidth()*canvas.length, canvas[0][0].getHeight()*canvas[0].length);
+        
+        //NextBlock pane:
+        nextblockPane = new GridPane();
+        nextblockCanvas = new Canvas[4][4];
+        
+        for(int i=0 ; i<4; i++)
+        {
+            for(int j=0; j<4; j++)
+            {
+                nextblockCanvas[i][j] = new Canvas();
+                nextblockCanvas[i][j].setWidth(40);
+                nextblockCanvas[i][j].setHeight(40);
+                nextblockPane.add(nextblockCanvas[i][j], j, i);
+            }
+        }
+        nextblockPane.setMaxSize(nextblockCanvas[0][0].getWidth()*nextblockCanvas.length, nextblockCanvas[0][0].getHeight()*nextblockCanvas[0].length);
+    }
+    
+    private void initiateNodes()
+    {
+        playagainYes = new Button("YES");
+        playagainNo = new Button("NO");
+        gameoverMessage = new Label("Game Over!\nPlay Again?");
+        gameoverMessage.setFont(Font.font(30));
+    }
+    
+    private void setHandlers()
+    {
+        keycontrol = new GamePlayController(model, this);
+        scene.setOnKeyReleased(keycontrol.getHandler());
+        scene.setOnKeyPressed(keycontrol.getHandler());
+        scene.setOnKeyTyped(keycontrol.getHandler());
+        this.setMenuBarHandler(this);
+    }
+    
+    public void removeHandler()
+    {
+        scene.setOnKeyReleased(null);
+        scene.setOnKeyPressed(null);
+        scene.setOnKeyTyped(null);
+                
+    }
+    
+    
+    protected class GamePlay extends AnimationTimer
+    {
+        private long previousNs = 0;
+        
+        @Override
+        public void handle(long nowNs) 
+        {
+            if(ViewsList.getCurrentViewIndex() == 2)
+            {
+                if (previousNs == 0) 
+                {
+                    previousNs = nowNs;
+                }
+                updateFromModel();
+                paintCanvasGrid();
+                
+                if(model.isGameOver())
+                {
+                    gameplay.stop();
+                    removeHandler();
+                    rootPane.setCenter(gameoverPane);  
+                    playagainYes.setOnKeyTyped(keycontrol.getButtonHandler());
+                    playagainNo.setOnKeyTyped(keycontrol.getButtonHandler());             
+                }
+            }
+        }  
+    }
+    
+    private void paintCanvasGrid()
+    {
+
+        for(int i=2 ; i< pixelplayfield.length; i++)
+            {
+                for(int j=0; j<pixelplayfield[0].length; j++)
+                {
+                    GraphicsContext gc = canvas[i][j].getGraphicsContext2D();
+                    gc.setStroke(Color.BLACK);
+                    gc.strokeRect(0, 0, canvas[i][j].getWidth(), canvas[i][j].getHeight());
+                    if(pixelplayfield[i][j] == 1)
+                    {
+                        gc.setFill(Color.YELLOW);
+                        gc.fillRect(0, 0, canvas[i][j].getWidth(), canvas[i][j].getHeight());
+                    }
+                    else
+                    {
+                        gc.setFill(Color.ORANGE);
+                        gc.fillRect(0, 0, canvas[i][j].getWidth(), canvas[i][j].getHeight());
+                        gc.setStroke(Color.BLACK);
+                        gc.strokeRect(0, 0, canvas[i][j].getWidth(), canvas[i][j].getHeight());
+                    }                    
+                }
+            }
+        
+        for(int i=0; i< nextblockCanvas.length; i++)
+        {
+            for(int j=0; j< nextblockCanvas[0].length; j++)
+            {
+                GraphicsContext gc = nextblockCanvas[i][j].getGraphicsContext2D();
+                gc.setFill(Color.ORANGE);
+                gc.fillRect(0, 0, canvas[i][j].getWidth(), canvas[i][j].getHeight());
+            }
+        }
+        
+        for(int i=0 ; i<pixelnextBlock.length; i++)
+        {
+            for(int j=0; j<pixelnextBlock[0].length; j++)
+            {
+                GraphicsContext gc = nextblockCanvas[i][j].getGraphicsContext2D();
+                gc.setStroke(Color.BLACK);
+                gc.strokeRect(0, 0, canvas[i][j].getWidth(), canvas[i][j].getHeight());
+                if(pixelnextBlock[i][j] == 1)
+                {
+                    gc.setFill(Color.YELLOW);
+                    gc.fillRect(0, 0, nextblockCanvas[i][j].getWidth(), nextblockCanvas[i][j].getHeight());
+                }
+
+            }
+        }          
+    }
+    
+}
+
+
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+
+/**
+ *
+ * @author Teddy
+ */
+ class HighScoreView extends Views{
+    private BorderPane rootPane;
+    private  TextField playername;
+    private Button okB;
+    private VBox bottomPane;
+    private Scene ScoreBoard;
+    private final Model model;
+    private Label textlabel;
+    
+    public HighScoreView(Model model)
+    {
+        this.model = model;
+
+        //instructions:
+        System.out.println("Insert name and press ENTER to continue.");
+        initiateNodes();
+        //create rootPane:
+        rootPane = new BorderPane();
+        rootPane.setPadding(new Insets(10));
+        rootPane.setStyle("-fx-background-color: #228b22;");
+        
+        setHandlers();
+        initiatePanes();
+        rootPane.setCenter(bottomPane);
+        rootPane.centerProperty();
+        //Scene 0 - menu
+        rootPane.setTop(this.menubar);
+        scene = new Scene(rootPane, windowWidth, windowHeight);
+        playername.setFocusTraversable(true);
+        playername.requestFocus();
+    }
+    
+    public Button[] getButtons()
+    {
+        initiateNodes();
+        Button[] buttons = {okB};
+        return buttons;
+    }
+    
+    private void setHandlers()
+    {
+        HighScoreController control = new HighScoreController(this);
+        playername.setOnAction(control.getHandler());
+        this.setMenuBarHandler(this);       
+    }
+    
+    private void initiatePanes()
+    {
+        //create bottomPane:
+        bottomPane = new VBox(20);
+        bottomPane.getChildren().addAll(textlabel, playername);
+        bottomPane.setAlignment(Pos.CENTER);
+        bottomPane.setMaxSize(windowWidth/4, windowHeight/5);
+        bottomPane.setStyle("-fx-background-color: #ffffff;");
+    }
+    
+    private void initiateNodes()
+    {
+        playername = new TextField();
+        textlabel = new Label("Please Insert Name");
+        textlabel.setFont(Font.font(30));
+        //okB = new Button("OK");
+    }
+    
+    public TextField getPlayername() {
+        return playername;
+    }
+}
+
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+/**
+ *
+ * @author Teddy
+ */
+ class MainMenuView extends Views{
+    private VBox bottomPane;
+    private Button newGameB;
+    private Button exitB;
+    private Button vsCom;
+    private Button highscoreB;
+    private Model model;
+    private BorderPane rootPane;
+    private Background stageBackground;
+    
+    public MainMenuView(Model model)
+    {
+        this.model = model;
+        
+        //create rootPane:
+        
+        rootPane = new BorderPane();
+        //inititate nodes:
+        InitiateNodes();
+        //set handlers:
+        setHandlers();
+        //buttonPane:
+        initiatePanes();
+        //set background:
+        rootPane.setBackground(Background.EMPTY);
+        rootPane.setBottom(bottomPane);
+        rootPane.setTop(this.menubar);
+        //Scene 0 - menu
+        
+        scene = new Scene(rootPane, windowWidth, windowHeight);
+    } 
+    
+    private void initiatePanes()
+    {
+        bottomPane = new VBox(20);
+        bottomPane.getChildren().addAll(newGameB, vsCom, highscoreB, exitB);
+        bottomPane.setMinSize(windowWidth/5, windowHeight/4);
+        bottomPane.setAlignment(Pos.CENTER);
+        bottomPane.setStyle("-fx-background-color: #ffffff;");
+    }
+    
+    private void InitiateNodes()
+    {
+        newGameB = new Button("NEW GAME");
+        vsCom =  new Button("VS.COM");
+        highscoreB = new Button ("HIGHSCORE");
+        exitB = new Button("EXIT");
+        
+        /*newGameB.setBackground(getBackground(0));
+        vsCom.setBackground(getBackground(0));
+        highscoreB.setBackground(getBackground(0));
+        exitB.setBackground(getBackground(0));*/
+    }
+    
+    private Background getBackground()
+    {
+        String imagepath;
+        Background backgroud;
+        imagepath = getClass().getResource("menupic.PNG").toExternalForm();
+            
+            if( imagepath == null)
+            {
+                
+                return Background.EMPTY;
+            }
+            else
+            {
+                
+                Image image = new Image(imagepath);
+                BackgroundSize backgroundSize = new BackgroundSize(windowWidth, windowHeight/5, true, true, true, false);
+                BackgroundImage backgroundImage = new BackgroundImage(image, BackgroundRepeat.REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.CENTER, backgroundSize);
+                backgroud = new Background(backgroundImage);
+                return backgroud;
+            }
+    }
+    
+    
+    public Button[] getButtons()
+    {
+        InitiateNodes();
+        Button[] buttons = {newGameB, vsCom, highscoreB, exitB};
+        return buttons;
+    }
+    
+    
+    private void setHandlers()
+    {
+        MainMenuController control = new MainMenuController(model, this);
+        newGameB.setOnKeyTyped(control.getHandler());
+        vsCom.setOnKeyTyped(control.getHandler());
+        highscoreB.setOnKeyTyped(control.getHandler());
+        exitB.setOnKeyTyped(control.getHandler());
+        MenuBarController menucontrol = new MenuBarController(this);
+        this.setMenuBarHandler(this);
+        //MenuBarController menubarcontrol = new MenuBarController(this, getMenuBar());
+    }
+}
+
+
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+
+/**
+ *
+ * @author Teddy
+ */
+ class PauseMenuView extends Views{
+    private Button resume;
+    private VBox bottomPane;
+    private Model model;
+    
+    public PauseMenuView(Model model)
+    {
+        this.model = model;
+        //Initiate nodes:
+        initiateNodes();
+        //create rootPane:
+        BorderPane rootPane = new BorderPane();
+        rootPane.setPadding(new Insets(10));
+        //set handler:
+        setHandlers();
+        //initiate panes:
+        initiatePanes();
+        
+        rootPane.setCenter(bottomPane);
+        rootPane.setTop(this.menubar);
+        rootPane.setStyle("-fx-background-color: #ff0000;");
+        //Scene 0 - menu
+        scene = new Scene(rootPane, windowWidth, windowHeight);
+
+    }
+    
+    public Button[] getButtons()
+    {
+        initiateNodes();
+        Button[] buttons = {resume};
+        return buttons;
+    }
+    
+    private void setHandlers()
+    {
+        PauseMenuController control = new PauseMenuController(this);
+        resume.setOnKeyTyped(control.getHandler()); 
+        this.setMenuBarHandler(this);
+    }
+    
+    private void initiatePanes()
+    {
+        //create bottomPane:
+        bottomPane = new VBox(20);
+        bottomPane.getChildren().addAll(resume);
+        bottomPane.setAlignment(Pos.CENTER);
+        bottomPane.setMinSize(windowWidth/5, windowHeight/4);
+        bottomPane.setStyle("-fx-background-color: #ffffff;");
+    }
+    
+    private void initiateNodes()
+    {
+        resume = new Button("RESUME");
+    }
+}
+
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+
+/**
+ *
+ * @author Teddy
+ */
+ class SettingsView extends Views{
+    private Background stageBackground;
+    private Model model;
+    private Button music1;
+    private Button music2;
+    private Button music3;
+    private Button musicoff;
+    private Button start;
+    //Panes:
+    private Label musictitle;
+    private VBox bottomPane; 
+    
+    public SettingsView(Model model)
+    {
+        this.model = model;    
+        //initiate nodes:
+        InitiateNodes();
+        //create rootPane:
+        BorderPane rootPane = new BorderPane();
+        //set buttonhandler:
+        setHandlers();
+        //initate Panes:
+        initiatePanes();
+        //add nodes:
+        rootPane.setBottom(bottomPane);
+           
+        //test backgrund, to remove later if necesary:
+        initiateBackground();
+        rootPane.setBackground(stageBackground);
+        rootPane.setTop(this.menubar);
+        //Scene 0 - menu
+        scene = new Scene(rootPane, windowWidth, windowHeight);
+    } 
+    
+    public Button[] getButtons()
+    {
+        InitiateNodes();
+        Button[] buttons = {music1,music2,music3, musicoff, start};
+        return buttons;
+    }
+    
+    private void initiateBackground()
+    {
+        
+       
+            stageBackground = Background.EMPTY; 
+        
+    }
+    
+    private void initiatePanes()
+    {
+        //initate musicPane:
+        VBox musicPane = new VBox(20);
+        musicPane.setMinHeight(windowHeight/3);
+        musicPane.setMaxWidth(windowWidth/4);
+        musicPane.getChildren().addAll(music1, music2, music3, musicoff, start);
+        musicPane.setAlignment(Pos.CENTER);
+        musicPane.setStyle( "-fx-border-color: khaki;\n"
+                + "-fx-border-insets: 5;\n"
+                + "-fx-border-width: 3;\n"
+                + "-fx-border-style: dashed;\n"
+                + "-fx-background-color: #000000"   //color black
+                ); //color black
+        
+        //initiate titlePane:
+        VBox titlebottomPane = new VBox(20);
+        titlebottomPane.setMaxWidth(windowWidth/4);
+        titlebottomPane.getChildren().add(musictitle);
+        titlebottomPane.setAlignment(Pos.CENTER);
+        titlebottomPane.setStyle( "-fx-border-color: khaki;\n"
+                + "-fx-border-insets: 1;\n"
+                + "-fx-border-width: 5;\n"
+                + "-fx-background-color: #000000"   //color black
+                );
+        
+        //create bottomPane:
+        bottomPane = new VBox(20);
+        
+        bottomPane.getChildren().addAll(titlebottomPane, musicPane);
+        bottomPane.setAlignment(Pos.CENTER);
+    }
+    
+    private void setHandlers()
+    {
+        SettingsController control = new SettingsController(model, this);
+        
+        music1.setOnKeyTyped(control.gethandler());
+        music2.setOnKeyTyped(control.gethandler());
+        music3.setOnKeyTyped(control.gethandler());
+        musicoff.setOnKeyTyped(control.gethandler());
+        start.setOnKeyTyped(control.gethandler());
+        this.setMenuBarHandler(this);
+    }
+    
+    private void InitiateNodes()
+    {
+        music1 = new Button("MUSIC - 1");
+        music2 = new Button("MUSIC - 2");
+        music3 = new Button("MUSIC - 3");
+        musicoff = new Button("OFF");
+        start = new Button("START");
+        musictitle = new Label("MUSIC TYPE");
+        musictitle.setTextFill(Color.WHITE);
+        musictitle.setFont(Font.font(30));
+    }
+    
+}
+
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+/**
+ *
+ * @author Teddy
+ */
+abstract class Views {
+    protected Scene scene;
+    protected Stage rootwindow;
+    protected double windowWidth;
+    protected double windowHeight;
+    protected final  Menu menuFile, menuInstructions;
+    protected final  MenuItem itemStart, itemPause, itemResume, itemHowToPlay; 
+    protected final  MenuBar menubar;
+    public Views()
+    {
+        //initiate menu:
+        menuFile = new Menu("File");
+        itemStart = new MenuItem("Start");
+        itemPause = new MenuItem("Pause");
+        itemResume = new MenuItem("Resume");              
+        menuFile.getItems().addAll(itemStart, itemPause, itemResume);
+        menuInstructions = new Menu("Instructions");
+        itemHowToPlay = new MenuItem("How To Play"); 
+        menuInstructions.getItems().addAll(itemHowToPlay);
+        menubar = new MenuBar();
+        menubar.getMenus().addAll(menuFile, menuInstructions);
+        
+        setComputerScreenSize();
+    }
+    
+    public Scene getScene()
+    {
+        return scene;
+    }
+    
+    public MenuItem[] getMenuItems()
+    {
+        MenuItem[] menuitems = {itemStart,itemPause, itemResume,itemHowToPlay};
+        return menuitems;
+    }
+    
+    public Menu[] getMenus()
+    {
+        Menu[] menus = {menuFile, menuInstructions};
+        return menus;
+    }
+    
+    private void setRootWindow(Stage rootwindow)
+    {
+        this.rootwindow = rootwindow;
+    }
+    
+    private void setComputerScreenSize()
+    {
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        // takes computers size and 
+        this.windowWidth = screenSize.getWidth()/1.5;
+        this.windowHeight = screenSize.getHeight()/1.1;
+    }
+    
+    public void setMenuBarHandler(Views currentview)
+    {
+        MenuBarController control = new MenuBarController(currentview);
+        itemStart.setOnAction(control.getHandler());
+        itemPause.setOnAction(control.getHandler());
+        itemResume.setOnAction(control.getHandler());
+        itemHowToPlay.setOnAction(control.getHandler());
+    }
+    
+    public double getWidth()
+    {
+        return windowWidth;
+    }
+    
+    public double getHeight()
+    {
+        return windowHeight;
+    }
+    
+    
+}
+
+
+
+
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+/**
+ *
+ * @author Teddy
+ */
+ class ViewsList {
+    private static  Views[] viewsList;
+    private static int currentViewIndex;
+    private static Views currentView;
+    private final Model model;
+
+    public ViewsList(Model model)
+    {
+        //initiate menu:
+
+        this.model = model;
+        currentViewIndex = 0;
+        viewsList = new Views[]{
+                    new MainMenuView(model),
+                    new SettingsView(model),
+                    new GamePlayView(model),
+                    new PauseMenuView(model),
+                    new HighScoreView(model)                  
+                };
+        currentView = viewsList[currentViewIndex];
+    }
+    
+    //test ta bort senar:
+    public static int getCurrentViewIndex()
+    {
+        return currentViewIndex;
+    }   
+    
+    public static Scene getCurrentViewScene()
+    {
+        return viewsList[currentViewIndex].getScene();
+    }
+    
+    
+    public static void changeView(int index)
+    {
+        currentViewIndex = index;        
+    }
+    
+    public static Views getCurrentView()
+    {
+        return currentView = viewsList[currentViewIndex];
+    }
+    
+    public static Views getCurrentViewByIndex(int index)
+    {
+        return viewsList[index];
+    }
+    
+    
+    
+    public static void resetViews()
+    {
+
+        Model newmodel = new Model();
+        viewsList = new Views[]{
+                    new MainMenuView(newmodel),
+                    new SettingsView(newmodel),
+                    new GamePlayView(newmodel),
+                    new PauseMenuView(newmodel),
+                    new HighScoreView(newmodel)                  
+                };
+    }
+}
+
+
+
+/**
+ *
+ * @author Teddy
+ */
+public class World extends Application{
+    private static Stage window;
+    private double windowWidth;
+    private double windowHeight;
+    private Menu menuFile, menuInstructions;
+    private MenuItem itemStart, itemPause, itemResume, itemHowToPlay; 
+    private MenuBar menubar;
+    //tes
+
+    
+    public void start(Stage primaryStage){
+        
+
+        window  = primaryStage;
+        setComputerScreenSize();
+        Model model = new Model();
+        ViewsList viewsList = new ViewsList(model);
+        //Scene 0 - menu
+        
+        
+        window.setTitle("Tetris");
+        window.setScene(ViewsList.getCurrentViewScene());
+        window.show();
+    }
+    
+    private void initMenuBar()
+    {
+        itemStart = new MenuItem("Start");
+        itemPause = new MenuItem("Pause");
+        itemResume = new MenuItem("Resume");
+        itemHowToPlay = new MenuItem("How To Play");
+        menuFile = new Menu("File");
+        menuFile.getItems().addAll(itemStart, itemPause, itemResume);
+        menuInstructions = new Menu("Instructions");
+        menuInstructions.getItems().addAll(itemHowToPlay);
+        menubar = new MenuBar();
+        menubar.getMenus().addAll(menuFile, menuInstructions);   
+    }
+    
+    public static Stage getWindow()
+    {
+        return window;
+    }
+
+    private void setComputerScreenSize()
+    {
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        // takes computers size and 
+        this.windowWidth = screenSize.getWidth()/1.5;
+        this.windowHeight = screenSize.getHeight()/1.2;
+        System.out.println("Screen width: " + windowWidth + "\n" + "Screen height: "+ windowHeight);
+    }
+    
+    public static void main(String[] args) {       
+        launch(args);
+    }   
+}
+
+
+
+
+
+
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+
+/**
+ *
+ * @author Teddy
+ */
+ class MusicHandler {
+    private ArrayList<URL> musicListURL;
+    private MediaPlayer mediaplayer;
+    private Media track;
+    
+    
+    public MusicHandler()
+    {
+        musicListURL = new ArrayList();
+        if(getClass().getResource("musicTypeA.mp3") == null)
+        {
+            //throw new NullPointerException("No music found"); 
+        }
+        else
+        {
+            musicListURL.add(getClass().getResource("musicTypeA.mp3"));
+        
+            track = new Media(musicListURL.get(0).toString());
+            mediaplayer = new MediaPlayer(track);
+        }
+        
+    }
+    
+    public void addMusicURL(String filename)
+    {
+        musicListURL.add(getClass().getResource(filename));
+    }
+    
+    public void playMusic(int index)
+    {
+        if(mediaplayer.getStatus() == Status.PLAYING)
+        {
+            mediaplayer.stop();
+        }
+        
+        track = new Media(musicListURL.get(index).toString());
+        
+        mediaplayer = new MediaPlayer(track);
+        mediaplayer.play();
+
+    }
+    
+    public void pauseMusic()
+    {
+        mediaplayer.pause();
+    }
+    
+    public void stopMusic()
+    {
+        mediaplayer.stop();
+    }
+    
+    public void resumeMusic()
+    {
+        if(mediaplayer.getStatus() == Status.PAUSED)
+        {
+            mediaplayer.play();
+        }
+    }
+}
