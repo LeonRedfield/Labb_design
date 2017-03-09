@@ -9,6 +9,11 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.Material;
+import javafx.scene.shape.Circle;
+import javafx.scene.shape.Line;
+import sample.Model.AddDrawObject;
+import sample.Model.CircleShape;
 import sample.Model.Observer;
 
 import java.util.ArrayList;
@@ -38,7 +43,6 @@ public class DrawView extends CanvasView implements Observer{
         topContainer.getChildren().add(super.getAbstractMenubar());
         topContainer.getChildren().add(toolBar);
         rootPane.setTop(topContainer);
-
         //init toolmenu:
 
         //set Scene:
@@ -49,9 +53,6 @@ public class DrawView extends CanvasView implements Observer{
         //System.out.println("sceneH - topContainerH =="+scene.getHeight() + "+"+ topContainer.getLayoutY()+" = " + (scene.getHeight()-topContainer.getMaxHeight()) );
         initiateMenu();
         initCanvas();
-
-
-
         rootPane.setCenter(canvas);
     }
 
@@ -112,6 +113,12 @@ public class DrawView extends CanvasView implements Observer{
             gc.setStroke(colorPicker.getValue());
         });
 
+        ovalButton.setOnAction(e->{
+
+        });
+
+
+
         widthSlider.valueProperty().addListener(e->{
             double value = widthSlider.getValue();
             String valueStr = String.format("%.1f", value);
@@ -137,15 +144,16 @@ public class DrawView extends CanvasView implements Observer{
 
 
         canvas.setOnMousePressed(e->{
-            gc.beginPath();
-            gc.lineTo(e.getX(), e.getY());
-            gc.stroke();
+                gc.beginPath();
+                gc.lineTo(e.getX(), e.getY());
+                gc.stroke();
         });
 
         canvas.setOnMouseDragged(e->{
             gc.lineTo(e.getX(), e.getY());
             gc.stroke();
         });
+        
     }
 
     @Override
