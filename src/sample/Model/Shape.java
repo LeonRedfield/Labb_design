@@ -1,5 +1,7 @@
 package sample.Model;
 
+import javafx.scene.paint.Color;
+
 import java.util.Objects;
 
 /**
@@ -12,23 +14,16 @@ public abstract class Shape implements Cloneable{
     protected double startY;
     protected double endX;
     protected double endY;
-
+    protected double thickness;
     protected double width;
     protected double height;
+    protected double radius;
     protected String type;
+    protected Color color;
+    protected boolean isFilled = false;
+    //protected Color fillColor;
 
     public Shape(){}
-
-    public Shape(Shape shape, double startX, double startY, double endX, double endY, double width, double height, String type) {
-        this.shape = shape;
-        this.startX = startX;
-        this.startY = startY;
-        this.endX = endX;
-        this.endY = endY;
-        this.width = width;
-        this.height = height;
-        this.type = type;
-    }
 
     public String getType() {
         return type;
@@ -64,6 +59,40 @@ public abstract class Shape implements Cloneable{
         endY = y;
     }
 
+    public Shape getShape() {
+        return shape;
+    }
+
+    public void setShape(Shape shape) {
+        this.shape = shape;
+    }
+
+    public double getRadius() {
+        return radius;
+    }
+
+    public void setRadius(double radius) {
+        this.radius = radius;
+    }
+
+    public Color getColor() {
+        return color;
+    }
+
+    public void setColor(Color color) {
+        this.color = color;
+    }
+
+    public boolean isFilled() {
+        return isFilled;
+    }
+
+    public void setFilled(boolean filled) {
+
+        isFilled = filled;
+    }
+
+
     public double getEndX() {
         return endX;
     }
@@ -78,6 +107,14 @@ public abstract class Shape implements Cloneable{
 
     public void setHeight(double height) {
         this.height = height;
+    }
+
+    public double getThickness() {
+        return thickness;
+    }
+
+    public void setThickness(double thickness) {
+        this.thickness = thickness;
     }
 
     public double getWidth() {

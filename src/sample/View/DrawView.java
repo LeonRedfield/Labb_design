@@ -11,12 +11,10 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
-import sample.Model.CircleShape;
-import sample.Model.DrawDocument;
-import sample.Model.Shape;
-import sample.Model.SingleLine;
+import sample.Model.*;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by Teddy on 2017-03-08.
@@ -31,7 +29,8 @@ public class DrawView extends CanvasView implements Observer{
     private Slider widthSlider;
     private Label widthSliderLabel;
     private ColorPicker colorPicker;
-    private Button penButton, lineButton, ovalButton, polygonButton, cursorButton;
+    private Button penButton, lineButton, ovalButton, rectangleButton, cursorButton;
+    private CheckBox fillCheckBox;
     private Canvas canvas;
     private GraphicsContext gc;
 
@@ -106,11 +105,12 @@ public class DrawView extends CanvasView implements Observer{
     private void initiateMenu()
     {
         //items for toolbar:
+        fillCheckBox = new CheckBox("Fill");
         cursorButton = new Button();
         penButton = new Button();
         lineButton = new Button();
         ovalButton = new Button();
-        polygonButton = new Button();
+        rectangleButton = new Button();
         colorPicker = new ColorPicker();
         colorPicker.setValue(Color.BLACK);
         widthSlider = new Slider(1,10,1);
@@ -118,9 +118,9 @@ public class DrawView extends CanvasView implements Observer{
         widthSlider.setShowTickMarks(true);
         widthSliderLabel = new Label("1.0");
         //set handlers:
-        colorPicker.setOnAction(e->{
-            gc.setStroke(colorPicker.getValue());
-        });
+        /*colorPicker.setOnAction(e->{
+            colorPicker.getValue());
+        });*/
 
         ovalButton.setOnAction(e->{
             currentShape = new CircleShape();
@@ -128,6 +128,23 @@ public class DrawView extends CanvasView implements Observer{
         lineButton.setOnAction(e -> {
             currentShape = new SingleLine();
         });
+
+        rectangleButton.setOnAction(e->{
+            currentShape = new RectangleShape();
+        });
+
+        testB = false;
+        cursorButton.setOnAction(e->{
+            testB = true;
+        });
+
+        fillCheckBox.setOnAction(e->{
+            if(currentShape!=null)
+            {
+                currentShape.setFilled(fillCheckBox.isSelected());
+            }
+        });
+
 
 
         widthSlider.valueProperty().addListener(e->{
@@ -142,22 +159,37 @@ public class DrawView extends CanvasView implements Observer{
         penButton.setGraphic(new ImageView("/sample/Resources/pen.png"));
         lineButton.setGraphic(new ImageView("/sample/Resources/line.png"));
         ovalButton.setGraphic(new ImageView("/sample/Resources/oval.png"));
-        polygonButton.setGraphic(new ImageView("/sample/Resources/polygon.png"));
+        rectangleButton.setGraphic(new ImageView("/sample/Resources/polygon.png"));
 
         //add items to toolbar:
-        toolBar.getItems().addAll(cursorButton, penButton,lineButton,ovalButton, polygonButton, widthSlider, widthSliderLabel,colorPicker);
+        toolBar.getItems().addAll(cursorButton, penButton,lineButton,ovalButton, rectangleButton, widthSlider, widthSliderLabel,colorPicker, fillCheckBox);
     }
+
+    boolean testB;
 
     private  void initCanvas()
     {
 
 
+
         centerPane.setOnMousePressed(e->{
             System.out.println("x: " +e.getX() +" y: " +e.getY());
-            e.getX();
-            e.getY();
-            currentShape.setX(e.getX());
-            currentShape.setY(e.getY());
+            if(testB)
+            {
+                //target object:
+                List<Shape> list = drawDocument.readDrawData();
+                javafx.scene.shape.Shape shape = (javafx.scene.shape.Shape) e.getTarget();
+
+            }else {
+                currentShape.setFilled(fillCheckBox.isSelected());
+                currentShape.setColor(colorPicker.getValue());
+                currentShape.setThickness(widthSlider.getValue());
+                System.out.println("current color: " + colorPicker.getValue() + " and shape color ="+currentShape.getColor());
+                currentShape.setX(e.getX());
+                currentShape.setY(e.getY());
+            }
+
+
         });
 
         centerPane.setOnMouseDragged(e->{
@@ -166,11 +198,25 @@ public class DrawView extends CanvasView implements Observer{
         centerPane.setOnMouseReleased(e -> {
             System.out.println("x: " +e.getX() +" y: " +e.getY());
             System.out.println("Mouse released");
-            currentShape.setEnd(e.getX(), e.getY());
-            currentShape.setWidth(200);
-            drawDocument.writeDrawData(currentShape);
+            if(!testB)
+            {
 
-            drawDocument.notifyAllObservers();
+                currentShape.setEnd(e.getX(), e.getY());
+                currentShape.setHeight(e.getY()-currentShape.getY());
+                currentShape.setWidth(e.getSceneX()-currentShape.getX());
+                currentShape.setRadius(Math.hypot(Math.abs(currentShape.getX()-e.getX()),Math.abs(currentShape.getY()-e.getY())));
+                System.out.println("AFTER current color: " + colorPicker.getValue() + " and shape color ="+currentShape.getColor());
+                drawDocument.writeDrawData(currentShape);
+                drawDocument.notifyAllObservers();
+            }
+            else
+            {
+                testB = false;
+            }
+
+
+
+
         });
         
     }
@@ -185,5 +231,6 @@ public class DrawView extends CanvasView implements Observer{
         centerPane.getChildren().remove(0,centerPane.getChildren().size());
         System.out.println("children antal: " + centerPane.getChildren().size());
         centerPane.getChildren().add(group);
+        System.out.println("children antal after update: " + centerPane.getChildren().size());
     }
 }
