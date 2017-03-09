@@ -40,5 +40,9 @@ public class DrawDocument extends Subject{
         notifyAllObservers();
     }
 
+    public void deleteDrawData(Shape shape) {
+
+    }
+
 
 }
