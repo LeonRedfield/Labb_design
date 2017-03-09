@@ -9,12 +9,6 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.Material;
-import javafx.scene.shape.Circle;
-import javafx.scene.shape.Line;
-import sample.Model.AddDrawObject;
-import sample.Model.CircleShape;
-import sample.Model.Observer;
 
 import java.util.ArrayList;
 

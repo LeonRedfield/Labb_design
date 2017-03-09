@@ -17,13 +17,15 @@ public class CircleShape extends Shape{
         circle = new Circle();
     }
 
+    @Override
+    javafx.scene.shape.Shape draw() {
+        return null;
+    }
+
     public Circle getCircle()
     {
         return circle;
     }
 
-    @Override
-    void draw() {
 
-    }
 }

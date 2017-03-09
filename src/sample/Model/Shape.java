@@ -59,7 +59,7 @@ public abstract class Shape implements Cloneable{
     public void setWidth(double width) {
         this.width = width;
     }
-    abstract void draw();
+    abstract javafx.scene.shape.Shape draw();
     @Override
     public Object clone()
     {
