@@ -167,6 +167,7 @@ public class DrawView extends CanvasView implements Observer{
             System.out.println("x: " +e.getX() +" y: " +e.getY());
             System.out.println("Mouse released");
             currentShape.setEnd(e.getX(), e.getY());
+            currentShape.setWidth(200);
             drawDocument.writeDrawData(currentShape);
 
             drawDocument.notifyAllObservers();
@@ -179,10 +180,7 @@ public class DrawView extends CanvasView implements Observer{
         System.out.println("update called by subject");
         Group group = new Group();
         for(Shape s: drawDocument.readDrawData()) {
-            System.out.println("s in update: X=" + s.getX() + " Y="+ s.getY() + " endX=" + s.getEndX() + "  endY = " + s.getEndY());
-            Line tmp = (Line) s.draw();
-            System.out.println("line tmp in update: X=" + tmp.getStartX() + " Y="+ tmp.getStartY() + " endX=" + tmp.getEndX() + "  endY = " + tmp.getEndY());
-            group.getChildren().add(tmp);
+            group.getChildren().add(s.draw());
         }
         centerPane.getChildren().remove(0,centerPane.getChildren().size());
         System.out.println("children antal: " + centerPane.getChildren().size());
