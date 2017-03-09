@@ -51,9 +51,10 @@ abstract public class CanvasView{
     private void setComputerScreenSize()
     {
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        System.out.println("width: " +screenSize.getWidth() + " height: " +screenSize.getHeight());
         // takes computers size and
         this.windowWidth = screenSize.getWidth()/1.5;
-        this.windowHeight = screenSize.getHeight()/1.1;
+        this.windowHeight = screenSize.getHeight()/1.5;
     }
 
     private void initMenu()
@@ -64,21 +65,30 @@ abstract public class CanvasView{
         fileMenu = new Menu("File");
         editMenu = new Menu("Edit");
         viewMenu = new Menu("View");
+
         //Menu items for fileMenu:
         fileMenuItems.add(new MenuItem("New"));
         fileMenuItems.add(new MenuItem("Save"));
         fileMenuItems.add(new MenuItem("Save As"));
         fileMenuItems.add(new MenuItem("Open"));
         fileMenuItems.add(new MenuItem("Close"));
-        //bind items to key combinations:
+        //Menu items for editMenu:
+        editMenuItems.add(new MenuItem("Undo"));
+        editMenuItems.add(new MenuItem("Redo"));
+
+        //bind fileMenuItems to key combinations:
         fileMenuItems.get(0).setAccelerator(KeyCombination.keyCombination("Ctrl+N"));
         fileMenuItems.get(1).setAccelerator(KeyCombination.keyCombination("Ctrl+S"));
         fileMenuItems.get(2).setAccelerator(KeyCombination.keyCombination("Ctrl+A"));
         fileMenuItems.get(3).setAccelerator(KeyCombination.keyCombination("Ctrl+O"));
+        //bind editMenuItems to key combinations:
+        editMenuItems.get(0).setAccelerator(KeyCombination.keyCombination("Ctrl+Z"));
+        editMenuItems.get(1).setAccelerator(KeyCombination.keyCombination("Ctrl+Y"));
         // set handlers:
 
         //add items to
         fileMenu.getItems().addAll(fileMenuItems);
+        editMenu.getItems().addAll(editMenuItems);
         // add menus to list
         menus.add(fileMenu);
         menus.add(editMenu);

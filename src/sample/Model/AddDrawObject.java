@@ -3,13 +3,14 @@ package sample.Model;
 /**
  * Created by Teddy on 2017-03-08.
  */
-public class AddDrawObject implements EditCommand{
+public class AddDrawObject implements EditCommand {
     private Shape drawObject;
     private DrawDocument drawDocument;
 
-    public AddDrawObject(DrawDocument drawDocument)
+    public AddDrawObject(DrawDocument drawDocument, Shape drawObject)
     {
-        this.drawDocument =drawDocument;
+        this.drawDocument = drawDocument;
+        this.drawObject = drawObject;
     }
 
 
@@ -24,11 +25,16 @@ public class AddDrawObject implements EditCommand{
 
     @Override
     public void undo() {
-
+        drawDocument.deleteDrawData(drawObject);
     }
 
     @Override
     public void redo() {
+        drawDocument.writeDrawData(drawObject);
+    }
 
+    @Override
+    public void execute() {
+        drawDocument.writeDrawData(drawObject);
     }
 }

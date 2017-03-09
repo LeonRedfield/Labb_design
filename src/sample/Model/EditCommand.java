@@ -7,4 +7,5 @@ public interface EditCommand {
 
     void undo();
     void redo();
+    void execute();
 }

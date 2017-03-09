@@ -37,12 +37,18 @@ public class DrawView extends CanvasView implements Observer{
     private Shape currentShape;
 
     private DrawDocument drawDocument;
+    private UndoMenu undoMenu;
+    private RedoMenu redoMenu;
 
     public DrawView(DrawDocument drawDocument)
     {
         super();
         this.drawDocument = drawDocument;
+        undoMenu = new UndoMenu();
+        redoMenu = new RedoMenu();
+
         this.centerPane = new VBox();
+
         drawDocument.attach(this);
 
         rootPane = new BorderPane();
@@ -50,17 +56,39 @@ public class DrawView extends CanvasView implements Observer{
         toolBar = new ToolBar();
         topContainer.getChildren().add(super.getAbstractMenubar());
         topContainer.getChildren().add(toolBar);
+        this.centerPane.setMaxSize(400, 400);
         rootPane.setTop(topContainer);
         rootPane.setCenter(centerPane);
+
         //init toolmenu:
 
         //set Scene:
         scene = new Scene(rootPane, super.windowWidth, super.windowHeight);
         rootPane.setStyle("-fx-background-color: white");
-        //centerPane.setStyle("-fx-background-color: yellow");
+        centerPane.setStyle("-fx-background-color: yellow");
         centerPane.getChildren().add(new Line(10,10,0,0));
         //System.out.println("sceneH - topContainerH =="+scene.getHeight() + "+"+ topContainer.getLayoutY()+" = " + (scene.getHeight()-topContainer.getMaxHeight()) );
         initiateMenu();
+
+        //Init undo/redo menu item handlers
+        //(Undo)
+        editMenuItems.get(0).setOnAction(e -> {
+            if(!undoMenu.isEmpty()){
+                EditCommand c = undoMenu.pop();
+                c.execute();
+                redoMenu.push(c);
+            }
+
+        });
+        editMenuItems.get(1).setOnAction(e -> {
+            if(!redoMenu.isEmpty()) {
+                EditCommand c = undoMenu.pop();
+                c.execute();
+                redoMenu.push(c);
+            }
+        });
+
+
         initCanvas();
     }
 
