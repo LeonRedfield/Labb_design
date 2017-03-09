@@ -2,6 +2,7 @@ package sample;
 
 import javafx.application.Application;
 import javafx.stage.Stage;
+import sample.Model.DrawDocument;
 import sample.View.CanvasView;
 import sample.View.DrawView;
 
@@ -9,11 +10,14 @@ import java.awt.*;
 
 public class Main extends Application {
     private static Stage window;
+    private DrawDocument drawDocument;
 
     @Override
     public void start(Stage primaryStage) throws Exception{
         window = primaryStage;
-        DrawView drawView = new DrawView();
+
+        drawDocument = new DrawDocument();
+        DrawView drawView = new DrawView(drawDocument);
 
         window  = primaryStage;
         window.setTitle("Ritprogram");

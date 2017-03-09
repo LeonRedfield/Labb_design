@@ -18,7 +18,7 @@ public class CircleShape extends Shape{
     }
 
     @Override
-    javafx.scene.shape.Shape draw() {
+    public javafx.scene.shape.Shape draw() {
         return null;
     }
 

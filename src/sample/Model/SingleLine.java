@@ -1,6 +1,7 @@
 package sample.Model;
 
 import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 
 /**
@@ -17,19 +18,21 @@ public class SingleLine extends Shape{
     }
 
     @Override
-    javafx.scene.shape.Shape draw() {
-        line.setStartX(super.x);
-        line.setStartY(super.y);
-        line.setEndX(this.endX);
-        line.setEndY(this.endY);
-        line.setStrokeWidth(super.width);
-        return line;
+    public javafx.scene.shape.Shape draw() {
+        Line line2 = new Line();
+        line2.setStartX(super.startX);
+        line2.setStartY(super.startY);
+        line2.setEndX(this.endX);
+        line2.setEndY(this.endY);
+        line2.setStrokeWidth(5);
+        line2.setFill(Color.BLACK);
+        return line2;
     }
 
     public void setStart(double x, double y)
     {
-        super.x = x;
-        super.y = y;
+        super.startX = x;
+        super.startY = y;
     }
 
     public void setEnd(double x, double y)

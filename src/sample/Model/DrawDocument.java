@@ -7,40 +7,34 @@ import javafx.scene.Node;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
+import sample.View.Observer;
 
 import java.util.ArrayList;
 import java.util.List;
 /**
  * Created by Teddy on 2017-03-08.
  */
+
+
 public class DrawDocument extends Subject{
-
-    private Canvas canvas;
-    private GraphicsContext gc;
-
     //For testing
     private List<Shape> shapeList;
 
 
-    public DrawDocument(double height, double width) {
+    public DrawDocument() {
         super();
-        canvas = new Canvas(width, height);
         shapeList = new ArrayList<>();
 
     }
 
-    public Group readDrawData()
+    public List<Shape> readDrawData()
     {
-        Group group = new Group();
-        for(Shape s: shapeList) {
-            group.getChildren().add(null);
-        }
-        return group;
+        return shapeList;
     }
 
-    public synchronized void writeDrawData(Shape shape)
+    public void writeDrawData(Shape shape)
     {
-        shapeList.add(shape);
+        shapeList.add(shape.clone());
         notifyAllObservers();
     }
 

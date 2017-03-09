@@ -1,5 +1,6 @@
 package sample.View;
 
+import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -9,6 +10,10 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import sample.Model.CircleShape;
+import sample.Model.DrawDocument;
+import sample.Model.Shape;
+import sample.Model.SingleLine;
 
 import java.util.ArrayList;
 
@@ -19,6 +24,7 @@ public class DrawView extends CanvasView implements Observer{
     private Scene scene;
     private VBox topContainer;
     private BorderPane rootPane;
+    private VBox centerPane;
     private Background stageBackground;
     private ToolBar toolBar;
     private Slider widthSlider;
@@ -28,26 +34,32 @@ public class DrawView extends CanvasView implements Observer{
     private Canvas canvas;
     private GraphicsContext gc;
 
-    public DrawView()
+    private Shape currentShape;
+
+    private DrawDocument drawDocument;
+
+    public DrawView(DrawDocument drawDocument)
     {
         super();
+        this.drawDocument = drawDocument;
+        this.centerPane = new VBox();
+        drawDocument.attach(this);
+
         rootPane = new BorderPane();
         topContainer = new VBox();
         toolBar = new ToolBar();
         topContainer.getChildren().add(super.getAbstractMenubar());
         topContainer.getChildren().add(toolBar);
         rootPane.setTop(topContainer);
+        rootPane.setCenter(centerPane);
         //init toolmenu:
 
         //set Scene:
         scene = new Scene(rootPane, super.windowWidth, super.windowHeight);
-        canvas = new Canvas(scene.getWidth(), scene.getHeight());
-        gc = canvas.getGraphicsContext2D();
         rootPane.setStyle("-fx-background-color: white");
         //System.out.println("sceneH - topContainerH =="+scene.getHeight() + "+"+ topContainer.getLayoutY()+" = " + (scene.getHeight()-topContainer.getMaxHeight()) );
         initiateMenu();
         initCanvas();
-        rootPane.setCenter(canvas);
     }
 
     public Canvas getCanvas() {
@@ -108,9 +120,11 @@ public class DrawView extends CanvasView implements Observer{
         });
 
         ovalButton.setOnAction(e->{
-
+            currentShape = new CircleShape();
         });
-
+        lineButton.setOnAction(e -> {
+            currentShape = new SingleLine();
+        });
 
 
         widthSlider.valueProperty().addListener(e->{
@@ -133,25 +147,35 @@ public class DrawView extends CanvasView implements Observer{
 
     private  void initCanvas()
     {
-        gc.setStroke(Color.BLACK);
-        gc.setLineWidth(1);
 
 
-        canvas.setOnMousePressed(e->{
-                gc.beginPath();
-                gc.lineTo(e.getX(), e.getY());
-                gc.stroke();
+        centerPane.setOnMousePressed(e->{
+            currentShape.setX(e.getX());
+            currentShape.setY(e.getY());
         });
 
-        canvas.setOnMouseDragged(e->{
-            gc.lineTo(e.getX(), e.getY());
-            gc.stroke();
+        centerPane.setOnMouseDragged(e->{
+        });
+
+        centerPane.setOnMouseReleased(e -> {
+            System.out.println("Mouse released");
+            currentShape.setEnd(e.getX(), e.getY());
+            drawDocument.writeDrawData(currentShape);
+
+            drawDocument.notifyAllObservers();
         });
         
     }
 
     @Override
     public void update() {
-
+        System.out.println("update called by subject");
+        Group group = new Group();
+        for(Shape s: drawDocument.readDrawData()) {
+            group.getChildren().add(s.draw());
+        }
+        centerPane.getChildren().remove(0,centerPane.getChildren().size());
+        System.out.println("children antal: " + centerPane.getChildren().size());
+        centerPane.getChildren().add(group);
     }
 }

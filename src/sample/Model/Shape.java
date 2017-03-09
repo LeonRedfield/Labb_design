@@ -8,16 +8,23 @@ import java.util.Objects;
 public abstract class Shape implements Cloneable{
     private String id;
     protected Shape shape;
-    protected double x;
-    protected double y;
+    protected double startX;
+    protected double startY;
+    protected double endX;
+    protected double endY;
+
     protected double width;
     protected double height;
     protected String type;
 
     public Shape(){}
-    public Shape(double x, double y, double width, double height,String type) {
-        this.x = x;
-        this.y = y;
+
+    public Shape(Shape shape, double startX, double startY, double endX, double endY, double width, double height, String type) {
+        this.shape = shape;
+        this.startX = startX;
+        this.startY = startY;
+        this.endX = endX;
+        this.endY = endY;
         this.width = width;
         this.height = height;
         this.type = type;
@@ -36,19 +43,24 @@ public abstract class Shape implements Cloneable{
     }
 
     public double getX() {
-        return x;
+        return startX;
     }
 
     public void setX(double x) {
-        this.x = x;
+        this.startX = x;
     }
 
     public double getY() {
-        return y;
+        return startY;
     }
 
     public void setY(double y) {
-        this.y = y;
+        this.startY = y;
+    }
+
+    public void setEnd(double x, double y){
+        endX = x;
+        endY = y;
     }
 
 
@@ -59,13 +71,13 @@ public abstract class Shape implements Cloneable{
     public void setWidth(double width) {
         this.width = width;
     }
-    abstract javafx.scene.shape.Shape draw();
+    abstract public javafx.scene.shape.Shape draw();
     @Override
-    public Object clone()
+    public Shape clone()
     {
-        Object clone = null;
+        Shape clone = null;
         try{
-            clone = super.clone();
+            clone = (Shape)super.clone();
         }catch (CloneNotSupportedException e)
         {
             e.printStackTrace();
