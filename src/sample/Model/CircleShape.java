@@ -22,6 +22,11 @@ public class CircleShape extends Shape{
         return null;
     }
 
+    @Override
+    public Shape clone() {
+        return null;
+    }
+
     public Circle getCircle()
     {
         return circle;

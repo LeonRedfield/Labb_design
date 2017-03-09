@@ -59,10 +59,26 @@ public abstract class Shape implements Cloneable{
     }
 
     public void setEnd(double x, double y){
+        System.out.println("set endX=" + x + "  setendY="+ y);
         endX = x;
         endY = y;
     }
 
+    public double getEndX() {
+        return endX;
+    }
+
+    public double getEndY() {
+        return endY;
+    }
+
+    public double getHeight() {
+        return height;
+    }
+
+    public void setHeight(double height) {
+        this.height = height;
+    }
 
     public double getWidth() {
         return width;
@@ -73,16 +89,5 @@ public abstract class Shape implements Cloneable{
     }
     abstract public javafx.scene.shape.Shape draw();
     @Override
-    public Shape clone()
-    {
-        Shape clone = null;
-        try{
-            clone = (Shape)super.clone();
-        }catch (CloneNotSupportedException e)
-        {
-            e.printStackTrace();
-        }
-
-        return clone;
-    }
+    abstract public Shape clone();
 }

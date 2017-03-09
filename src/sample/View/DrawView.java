@@ -10,6 +10,7 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Line;
 import sample.Model.CircleShape;
 import sample.Model.DrawDocument;
 import sample.Model.Shape;
@@ -57,6 +58,8 @@ public class DrawView extends CanvasView implements Observer{
         //set Scene:
         scene = new Scene(rootPane, super.windowWidth, super.windowHeight);
         rootPane.setStyle("-fx-background-color: white");
+        //centerPane.setStyle("-fx-background-color: yellow");
+        centerPane.getChildren().add(new Line(10,10,0,0));
         //System.out.println("sceneH - topContainerH =="+scene.getHeight() + "+"+ topContainer.getLayoutY()+" = " + (scene.getHeight()-topContainer.getMaxHeight()) );
         initiateMenu();
         initCanvas();
@@ -150,6 +153,9 @@ public class DrawView extends CanvasView implements Observer{
 
 
         centerPane.setOnMousePressed(e->{
+            System.out.println("x: " +e.getX() +" y: " +e.getY());
+            e.getX();
+            e.getY();
             currentShape.setX(e.getX());
             currentShape.setY(e.getY());
         });
@@ -158,6 +164,7 @@ public class DrawView extends CanvasView implements Observer{
         });
 
         centerPane.setOnMouseReleased(e -> {
+            System.out.println("x: " +e.getX() +" y: " +e.getY());
             System.out.println("Mouse released");
             currentShape.setEnd(e.getX(), e.getY());
             drawDocument.writeDrawData(currentShape);
@@ -172,7 +179,10 @@ public class DrawView extends CanvasView implements Observer{
         System.out.println("update called by subject");
         Group group = new Group();
         for(Shape s: drawDocument.readDrawData()) {
-            group.getChildren().add(s.draw());
+            System.out.println("s in update: X=" + s.getX() + " Y="+ s.getY() + " endX=" + s.getEndX() + "  endY = " + s.getEndY());
+            Line tmp = (Line) s.draw();
+            System.out.println("line tmp in update: X=" + tmp.getStartX() + " Y="+ tmp.getStartY() + " endX=" + tmp.getEndX() + "  endY = " + tmp.getEndY());
+            group.getChildren().add(tmp);
         }
         centerPane.getChildren().remove(0,centerPane.getChildren().size());
         System.out.println("children antal: " + centerPane.getChildren().size());

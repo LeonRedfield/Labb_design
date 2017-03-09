@@ -34,7 +34,9 @@ public class DrawDocument extends Subject{
 
     public void writeDrawData(Shape shape)
     {
-        shapeList.add(shape.clone());
+        Shape tmp = shape.clone();
+        System.out.println("Tmp in writeDrawData: X=" + tmp.getX() + " Y="+ tmp.getY() + " endX=" + tmp.getEndX() + "  endY = " + tmp.getEndY());
+        shapeList.add(tmp);
         notifyAllObservers();
     }
 
