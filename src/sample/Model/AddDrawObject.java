@@ -25,7 +25,9 @@ public class AddDrawObject implements EditCommand {
 
     @Override
     public void undo() {
+
         drawDocument.deleteDrawData(drawObject);
+        drawDocument.notifyAllObservers();
     }
 
     @Override
@@ -36,5 +38,10 @@ public class AddDrawObject implements EditCommand {
     @Override
     public void execute() {
         drawDocument.writeDrawData(drawObject);
+    }
+
+    @Override
+    public String toString() {
+        return "add";
     }
 }

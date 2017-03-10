@@ -75,16 +75,20 @@ public class DrawView extends CanvasView implements Observer{
         editMenuItems.get(0).setOnAction(e -> {
             if(!undoMenu.isEmpty()){
                 EditCommand c = undoMenu.pop();
-                c.execute();
+                System.out.println("undo command: " +c.toString());
+                c.undo();
                 redoMenu.push(c);
+                drawDocument.notifyAllObservers();
             }
 
         });
+        //(redo)
         editMenuItems.get(1).setOnAction(e -> {
             if(!redoMenu.isEmpty()) {
                 EditCommand c = undoMenu.pop();
-                c.execute();
-                redoMenu.push(c);
+                c.redo();
+                undoMenu.push(c);
+                drawDocument.notifyAllObservers();
             }
         });
 
@@ -234,7 +238,9 @@ public class DrawView extends CanvasView implements Observer{
                 currentShape.setWidth(e.getSceneX()-currentShape.getX());
                 currentShape.setRadius(Math.hypot(Math.abs(currentShape.getX()-e.getX()),Math.abs(currentShape.getY()-e.getY())));
                 System.out.println("AFTER current color: " + colorPicker.getValue() + " and shape color ="+currentShape.getColor());
-                drawDocument.writeDrawData(currentShape);
+
+                EditCommand c = drawDocument.writeDrawData(currentShape);
+                undoMenu.push(c);
                 drawDocument.notifyAllObservers();
             }
             else

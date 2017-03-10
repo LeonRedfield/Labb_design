@@ -20,7 +20,6 @@ public class DrawDocument extends Subject{
     //For testing
     private List<Shape> shapeList;
 
-
     public DrawDocument() {
         super();
         shapeList = new ArrayList<>();
@@ -32,20 +31,23 @@ public class DrawDocument extends Subject{
         return shapeList;
     }
 
-    public void writeDrawData(Shape shape)
+    public EditCommand writeDrawData(Shape shape)
     {
         Shape tmp = shape.clone();
         System.out.println("WriteData: " + tmp.getColor());
         //System.out.println("Tmp in writeDrawData: X=" + tmp.getX() + " Y="+ tmp.getY() + " endX=" + tmp.getEndX() + "  endY = " + tmp.getEndY() + "W ="+ tmp.getWidth() );
         shapeList.add(tmp);
-        notifyAllObservers();
+        EditCommand command = new AddDrawObject(this, tmp);
+        return command;
     }
 
     public void deleteDrawData(Shape shape)
     {
+        System.out.println("Deleting...");
         int index = getShapeIndx(shape);
         if(index >= 0)
         {
+            System.out.println("Found shape...Removing");
             shapeList.remove(index);
             notifyAllObservers();
         }
@@ -68,7 +70,8 @@ public class DrawDocument extends Subject{
         int i= 0;
         for(Shape s: this.shapeList)
         {
-            if(s.draw().toString().equals(shape.toString()))
+            System.out.println(s.toString() + " \n" +shape.toString());
+            if(s.toString().equals(shape.toString()))
             {
                 return i;
             }

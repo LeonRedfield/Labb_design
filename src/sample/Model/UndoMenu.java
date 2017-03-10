@@ -10,7 +10,7 @@ public class UndoMenu {
     private List<EditCommand> undoStack;
 
     public UndoMenu() {
-        undoStack = new ArrayList<EditCommand>();
+        undoStack = new ArrayList<>();
     }
 
     public EditCommand pop() {
