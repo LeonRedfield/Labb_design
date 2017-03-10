@@ -9,7 +9,7 @@ import java.util.Objects;
  */
 public abstract class Shape implements Cloneable{
     private String id;
-    protected Shape shape;
+    protected javafx.scene.shape.Shape shape;
     protected double startX;
     protected double startY;
     protected double endX;
@@ -59,11 +59,11 @@ public abstract class Shape implements Cloneable{
         endY = y;
     }
 
-    public Shape getShape() {
+    public javafx.scene.shape.Shape getShape() {
         return shape;
     }
 
-    public void setShape(Shape shape) {
+    public void setShape(javafx.scene.shape.Shape shape) {
         this.shape = shape;
     }
 

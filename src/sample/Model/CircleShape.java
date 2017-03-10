@@ -23,12 +23,13 @@ public class CircleShape extends Shape{
         circle = new Circle(circleShape.getX(), circleShape.getY(),circleShape.getRadius());
         circle.setStroke(circleShape.getColor());
         circle.setFill(Color.TRANSPARENT);
+        circle.setStrokeWidth(circleShape.getThickness());
         if(circleShape.isFilled())
         {
             circle.setFill(circleShape.getColor());
         }
 
-
+        this.thickness = circleShape.getThickness();
         this.color = circleShape.getColor();
         this.startX = circleShape.startX;
         this.startY = circleShape.startY;
@@ -44,6 +45,7 @@ public class CircleShape extends Shape{
         //System.out.println("line2: X=" + line2.getStartX() + " Y="+ line2.getStartY() + " endX=" + line2.getEndX() + "  endY = " + line2.getEndY());
         Circle c = new Circle(super.getX(), super.getY(), super.radius);
         c.setStroke(super.getColor());
+        c.setStrokeWidth(super.getThickness());
         c.setFill(Color.TRANSPARENT);
         if(super.isFilled())
         {

@@ -2,19 +2,17 @@ package sample.View;
 
 import javafx.scene.Group;
 import javafx.scene.Scene;
-import javafx.scene.canvas.Canvas;
-import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Line;
+import javafx.scene.shape.*;
 import sample.Model.*;
+import sample.Model.Shape;
 
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by Teddy on 2017-03-08.
@@ -24,18 +22,14 @@ public class DrawView extends CanvasView implements Observer{
     private VBox topContainer;
     private BorderPane rootPane;
     private VBox centerPane;
-    private Background stageBackground;
     private ToolBar toolBar;
     private Slider widthSlider;
     private Label widthSliderLabel;
     private ColorPicker colorPicker;
     private Button penButton, lineButton, ovalButton, rectangleButton, cursorButton;
     private CheckBox fillCheckBox;
-    private Canvas canvas;
-    private GraphicsContext gc;
-
     private Shape currentShape;
-
+    private Button editButton;
     private DrawDocument drawDocument;
     private UndoMenu undoMenu;
     private RedoMenu redoMenu;
@@ -50,24 +44,16 @@ public class DrawView extends CanvasView implements Observer{
         this.centerPane = new VBox();
 
         drawDocument.attach(this);
-
         rootPane = new BorderPane();
         topContainer = new VBox();
         toolBar = new ToolBar();
         topContainer.getChildren().add(super.getAbstractMenubar());
         topContainer.getChildren().add(toolBar);
-        this.centerPane.setMaxSize(400, 400);
         rootPane.setTop(topContainer);
         rootPane.setCenter(centerPane);
-
-        //init toolmenu:
-
         //set Scene:
         scene = new Scene(rootPane, super.windowWidth, super.windowHeight);
         rootPane.setStyle("-fx-background-color: white");
-        centerPane.setStyle("-fx-background-color: yellow");
-        centerPane.getChildren().add(new Line(10,10,0,0));
-        //System.out.println("sceneH - topContainerH =="+scene.getHeight() + "+"+ topContainer.getLayoutY()+" = " + (scene.getHeight()-topContainer.getMaxHeight()) );
         initiateMenu();
 
         //Init undo/redo menu item handlers
@@ -88,16 +74,7 @@ public class DrawView extends CanvasView implements Observer{
             }
         });
 
-
         initCanvas();
-    }
-
-    public Canvas getCanvas() {
-        return canvas;
-    }
-
-    public GraphicsContext getGc() {
-        return gc;
     }
 
     public Scene getScene()
@@ -145,25 +122,46 @@ public class DrawView extends CanvasView implements Observer{
         widthSlider.setShowTickLabels(true);
         widthSlider.setShowTickMarks(true);
         widthSliderLabel = new Label("1.0");
+        editButton = new Button("Edit");
+
+        editButton.setOnAction(e->{
+            if(currentShape!=null)
+            {
+                //currentShape.setColor(colorPicker.getValue());
+                //currentShape.setThickness(widthSlider.getValue());
+                currentShape.setFilled(fillCheckBox.isSelected());
+                drawDocument.editDrawData(OGShape, currentShape);
+            }
+        });
         //set handlers:
-        /*colorPicker.setOnAction(e->{
-            colorPicker.getValue());
-        });*/
+        colorPicker.setOnAction(e->{
+            if(currentShape!=null)
+            {
+                currentShape.setColor(colorPicker.getValue());
+            }
+        });
 
         ovalButton.setOnAction(e->{
             currentShape = new CircleShape();
+            editmode = false;
+            editButton.setDisable(true);
         });
         lineButton.setOnAction(e -> {
             currentShape = new SingleLine();
+            editmode = false;
+            editButton.setDisable(true);
         });
 
         rectangleButton.setOnAction(e->{
             currentShape = new RectangleShape();
+            editmode = false;
+            editButton.setDisable(true);
         });
 
-        testB = false;
+        editmode = false;
         cursorButton.setOnAction(e->{
-            testB = true;
+            editmode = true;
+            editButton.setDisable(false);
         });
 
         fillCheckBox.setOnAction(e->{
@@ -173,13 +171,14 @@ public class DrawView extends CanvasView implements Observer{
             }
         });
 
-
-
         widthSlider.valueProperty().addListener(e->{
             double value = widthSlider.getValue();
             String valueStr = String.format("%.1f", value);
             widthSliderLabel.setText(valueStr);
-            gc.setLineWidth(value*2);
+            if(currentShape!=null)
+            {
+                currentShape.setThickness(value);
+            }
         });
 
         //set icons to buttons:
@@ -190,29 +189,28 @@ public class DrawView extends CanvasView implements Observer{
         rectangleButton.setGraphic(new ImageView("/sample/Resources/polygon.png"));
 
         //add items to toolbar:
-        toolBar.getItems().addAll(cursorButton, penButton,lineButton,ovalButton, rectangleButton, widthSlider, widthSliderLabel,colorPicker, fillCheckBox);
+        toolBar.getItems().addAll(cursorButton, penButton,lineButton,ovalButton, rectangleButton, widthSlider, widthSliderLabel,colorPicker, fillCheckBox, editButton);
     }
 
-    boolean testB;
+    private boolean editmode;
+    private Shape OGShape;
 
     private  void initCanvas()
     {
-
-
-
         centerPane.setOnMousePressed(e->{
-            System.out.println("x: " +e.getX() +" y: " +e.getY());
-            if(testB)
+            //System.out.println("x: " +e.getX() +" y: " +e.getY());
+
+            if(editmode)
             {
-                //target object:
-                List<Shape> list = drawDocument.readDrawData();
-                javafx.scene.shape.Shape shape = (javafx.scene.shape.Shape) e.getTarget();
+                javafx.scene.shape.Shape tmpShape = (javafx.scene.shape.Shape) e.getTarget();
+
+                currentShape = OGShape = drawDocument.getShapeOfFigureShape(tmpShape);
 
             }else {
                 currentShape.setFilled(fillCheckBox.isSelected());
                 currentShape.setColor(colorPicker.getValue());
                 currentShape.setThickness(widthSlider.getValue());
-                System.out.println("current color: " + colorPicker.getValue() + " and shape color ="+currentShape.getColor());
+
                 currentShape.setX(e.getX());
                 currentShape.setY(e.getY());
             }
@@ -224,41 +222,36 @@ public class DrawView extends CanvasView implements Observer{
         });
 
         centerPane.setOnMouseReleased(e -> {
-            System.out.println("x: " +e.getX() +" y: " +e.getY());
-            System.out.println("Mouse released");
-            if(!testB)
+            //System.out.println("x: " +e.getX() +" y: " +e.getY());
+            //System.out.println("Mouse released");
+            if(!editmode)
             {
-
                 currentShape.setEnd(e.getX(), e.getY());
                 currentShape.setHeight(e.getY()-currentShape.getY());
                 currentShape.setWidth(e.getSceneX()-currentShape.getX());
                 currentShape.setRadius(Math.hypot(Math.abs(currentShape.getX()-e.getX()),Math.abs(currentShape.getY()-e.getY())));
-                System.out.println("AFTER current color: " + colorPicker.getValue() + " and shape color ="+currentShape.getColor());
+                //System.out.println("AFTER current color: " + colorPicker.getValue() + " and shape color ="+currentShape.getColor());
                 drawDocument.writeDrawData(currentShape);
                 drawDocument.notifyAllObservers();
             }
             else
             {
-                testB = false;
+                editmode = false;
             }
 
-
-
-
         });
-        
     }
 
     @Override
     public void update() {
-        System.out.println("update called by subject");
+        //System.out.println("update called by subject");
         Group group = new Group();
         for(Shape s: drawDocument.readDrawData()) {
             group.getChildren().add(s.draw());
         }
         centerPane.getChildren().remove(0,centerPane.getChildren().size());
-        System.out.println("children antal: " + centerPane.getChildren().size());
+        //System.out.println("children antal: " + centerPane.getChildren().size());
         centerPane.getChildren().add(group);
-        System.out.println("children antal after update: " + centerPane.getChildren().size());
+        //System.out.println("children antal after update: " + centerPane.getChildren().size());
     }
 }

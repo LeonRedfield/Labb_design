@@ -18,13 +18,14 @@ public class RectangleShape extends Shape {
     {
         rectangle = new Rectangle(rectangleShape.getX(), rectangleShape.getY(),rectangleShape.getWidth(), rectangleShape.getHeight());
         rectangle.setStroke(rectangleShape.getColor());
+        rectangle.setStrokeWidth(rectangleShape.getThickness());
         rectangle.setFill(Color.TRANSPARENT);
         if(rectangleShape.isFilled())
         {
             rectangle.setFill(rectangleShape.getColor());
         }
 
-
+        this.thickness = rectangleShape.getThickness();
         this.color = rectangleShape.getColor();
         this.startX = rectangleShape.startX;
         this.startY = rectangleShape.startY;
@@ -38,6 +39,7 @@ public class RectangleShape extends Shape {
 
         Rectangle r = new Rectangle(super.startX, super.startY,super.width, super.getHeight());
         r.setStroke(super.getColor());
+        r.setStrokeWidth(super.getThickness());
         r.setFill(Color.TRANSPARENT);
         if(super.isFilled())
         {
