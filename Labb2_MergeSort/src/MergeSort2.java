@@ -73,7 +73,10 @@ public class MergeSort2 extends RecursiveAction{
         return new int[] {left[0], totalSize};
     }
 
-    protected static int sThreshold = 511;
+    protected static int sThreshold = 7000;
+    public void setThreshold(int t){
+        sThreshold = t;
+    }
 
     @Override
     protected void compute() {

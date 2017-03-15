@@ -7,27 +7,49 @@ public class Main {
 
     public static void main(String args[]){
 
-        //MergeSort ms = new MergeSort(10000000);
-        float[] list = new float[100000000];
-        for(int i = 0; i < list.length; i++) {
-            list[i] = new Random().nextInt(100);
+        float[] list;
+        int count = 21; //Number of times running calculations
+        long[] result = new long[count];
+
+        for(int i = 0; i < count; i++){
+            System.out.println("generating...");
+            list = generateList();
+            MergeSort2 ms = new MergeSort2(list,0, list.length);
+            garbage();
+            System.out.println("calculating: " +i);
+            result[i] = ms.sort();
+            System.out.println("calculation done");
+            System.out.println((float)result[i]/1000000000);
+
         }
-        //float[] test = new float[]{5, 2, 3, 4, 1, 6, 8, 7, 5, 6, 3, 4, 2, 8, 5, 33, 6, 1, 7};
-        MergeSort2 ms = new MergeSort2(list,0, list.length);
-        System.out.println("Starting...");
-        System.out.println((float)ms.sort()/1000000000);
-        float[] result = ms.result();
+        float r = 0;
+        for(int i = 1; i < count; i++){
+            r = r +result[i];
+        }
+        System.out.println("Genomsnitt: " +(r/(count-1))/1000000000);
+        //float[] result = ms.result();
 /*
         for(int i = 0; i < result.length; i++) {
             System.out.println(result[i]);
         }
   */
-        for(int i = 0; i < result.length-1; i++){
-            if(result[i] > result[i+1]){
-                System.out.println("Algorithm error");
-            }
-        }
 
-        System.out.println("All numbers checked");
+    }
+    private static float[] generateList(){
+        float[] list = new float[100000000];
+        for(int i = 0; i < list.length; i++) {
+            list[i] = new Random().nextInt(100);
+        }
+        return list;
+    }
+
+    private static void garbage() {
+        System.out.println("Garbage collecting...");
+        System.gc();
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }
