@@ -1,6 +1,7 @@
 
 import java.util.Arrays;
 import java.util.Random;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveAction;
 
 /**
@@ -26,9 +27,10 @@ public class MergeSort2 extends RecursiveAction{
     /*
      *  Returns time it took to complete the calculations
      */
-    public long sort(){
+    public long sort(int cores){
         this.startTime = System.nanoTime();
-        this.compute();
+        ForkJoinPool joinPool = new ForkJoinPool(cores);
+        joinPool.invoke(this);
         Arrays.parallelSort(mSource, 0, mLength);
         this.stopTime = System.nanoTime();
         return stopTime - startTime;

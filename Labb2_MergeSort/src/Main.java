@@ -17,7 +17,7 @@ public class Main {
             MergeSort2 ms = new MergeSort2(list,0, list.length);
             garbage();
             System.out.println("calculating: " +i);
-            result[i] = ms.sort();
+            result[i] = ms.sort(2); //specify no of cores
             System.out.println("calculation done");
             System.out.println((float)result[i]/1000000000);
 
