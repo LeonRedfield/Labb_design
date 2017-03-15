@@ -72,7 +72,7 @@ public class QuickSort extends RecursiveAction{
         return true;
     }
 
-    public void warmUp()
+    public static void warmUp()
     {
         System.out.println("warming up...");
         float[] arr = generateList();
@@ -107,20 +107,31 @@ public class QuickSort extends RecursiveAction{
     }
 
     public static void main(String[] args) throws Exception{
-        //init:
-        float[] arr = generateList();
-        ForkJoinPool forkJoinPool = new ForkJoinPool();
+        //warming up:
+        warmUp();
         //start sorting:
-        QuickSort q = new QuickSort(arr);
-        long timeStart = System.currentTimeMillis();
-        forkJoinPool.invoke(q);
-        long timeEnd = System.currentTimeMillis();
-        System.out.println("measurement done at "+ (timeEnd-timeStart)+"ms.");
-        forkJoinPool.shutdown();
+        int count = MEASUREMENT_AMOUNT;
+
+        for(int i = 0; i < count; i++){
+            System.out.println("generating...");
+            garbage();
+            ForkJoinPool forkJoinPool = new ForkJoinPool(2);
+            QuickSort q = new QuickSort(generateList());
+            System.out.println("time started.");
+            long timeStart = System.currentTimeMillis();
+            forkJoinPool.invoke(q);
+            long timeEnd = System.currentTimeMillis();
+            System.out.println("measurement["+ i+"] done at "+ (timeEnd-timeStart)+"ms.");
+
+            forkJoinPool.shutdown();
+
+            //check if sorted correctly:
+            //System.out.println("is sorted: " + q.isSorted());
+        }
     }
 
     public static int SIZE =      100000000; //10^8
-    public static int THRESHOLD = 1000;
+    public static int THRESHOLD = 10000;
     public static int RANDOM_SIZE = 100000;
     public static int MEASUREMENT_AMOUNT = 3;
 }
