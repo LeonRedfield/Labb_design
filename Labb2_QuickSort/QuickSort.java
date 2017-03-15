@@ -23,21 +23,6 @@ public class QuickSort extends RecursiveAction{
         this.arr = arr;
     }
 
-    public void innerSort(float[] array, int start, int end)
-    {
-        for(int i= start +1 ;i<end;i++)
-        {
-            float value = array[i];
-            int j= i-1;
-            while(j>=0 && value < array[j])
-            {
-                array[j+1] = array[j];
-                j--;
-            }
-            array[j+1] = value;
-        }
-    }
-
     private int partition(float[] arr, int left, int right)
     {
 
@@ -63,8 +48,7 @@ public class QuickSort extends RecursiveAction{
     protected void compute() {
         if ((end-start) < THRESHOLD)
         {
-            innerSort(arr, start, end+1);//insertionSort
-            //Arrays.sort(arr, start, end + 1);
+            Arrays.sort(arr, start, end + 1);
         }
         else {
             int pivotIndex = partition(arr, start, end);
@@ -112,65 +96,4 @@ public class QuickSort extends RecursiveAction{
 
     public static int SIZE =      100000000; //10^8
     public static int THRESHOLD = 1000;
-}
-
-
-
-
-
-
-
-
-
-
-
-    /*private float[] quickSort(float arr[]) {
-
-        if(arr.length==1)
-        {
-            return arr;
-        }
-        else
-        {
-            int left = partition(arr, 0,0);
-
-            if(arr.length==2)
-            {
-                return arr;
-            }
-            float[] L = new float[left];
-            float[] R = new float[arr.length-left];
-
-            for(int i=0;i<L.length;i++)
-            {
-                L[i] = arr[i];
-            }
-
-            int j= 0;
-            for (int i=left;i<arr.length;i++)
-            {
-                R[j++] = arr[i];
-            }
-
-            float[] resultL = quickSort(L);
-            float[] resultR = quickSort(R);
-            float[] result = merge(resultL,resultR);
-
-            return result;
-        }
-    }
-
-    public float[] merge(float[] L, float[] R)
-    {
-        float[] resultArray = new float[L.length+R.length];
-        for(int i=0;i<L.length;i++)
-        {
-            resultArray[i] = L[i];
-        }
-        int j=L.length;
-        for(int i=0;i<R.length;i++)
-        {
-            resultArray[j++] = R[i];
-        }
-        return resultArray;
-    }*/
+} 
