@@ -72,28 +72,55 @@ public class QuickSort extends RecursiveAction{
         return true;
     }
 
-    public static void main(String[] args) throws Exception{
-        //init:
-        float[] arr = new float[SIZE];
-        Random r = new Random();
+    public void warmUp()
+    {
+        System.out.println("warming up...");
+        float[] arr = generateList();
         ForkJoinPool forkJoinPool = new ForkJoinPool();
-
-        //form random number in float array:
-        for(int i=0;i<arr.length;i++) {arr[i] = r.nextInt(arr.length)+1;}
-        System.out.println("random done.");
-
         //start sorting:
-        long timeStart = System.currentTimeMillis();
         QuickSort q = new QuickSort(arr);
+        long timeStart = System.currentTimeMillis();
         forkJoinPool.invoke(q);
         long timeEnd = System.currentTimeMillis();
-        System.out.println("done at "+ (timeEnd-timeStart)+"ms.");
         forkJoinPool.shutdown();
+        System.out.println("warming, done at "+ (timeEnd-timeStart)+"ms.");
+    }
 
-        //check if sorted correctly:
-        System.out.println("is sorted: " + q.isSorted());
+    private static void garbage() {
+        System.out.println("Garbage collecting...");
+        System.gc();
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        System.out.println("Garbage collecting done.");
+    }
+
+    private static float[] generateList(){
+        float[] list = new float[SIZE];
+        for(int i = 0; i < list.length; i++) {
+            list[i] = new Random().nextInt(RANDOM_SIZE);
+        }
+        //System.out.println("random done.");
+        return list;
+    }
+
+    public static void main(String[] args) throws Exception{
+        //init:
+        float[] arr = generateList();
+        ForkJoinPool forkJoinPool = new ForkJoinPool();
+        //start sorting:
+        QuickSort q = new QuickSort(arr);
+        long timeStart = System.currentTimeMillis();
+        forkJoinPool.invoke(q);
+        long timeEnd = System.currentTimeMillis();
+        System.out.println("measurement done at "+ (timeEnd-timeStart)+"ms.");
+        forkJoinPool.shutdown();
     }
 
     public static int SIZE =      100000000; //10^8
     public static int THRESHOLD = 1000;
-} 
+    public static int RANDOM_SIZE = 100000;
+    public static int MEASUREMENT_AMOUNT = 3;
+}
