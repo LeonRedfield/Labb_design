@@ -9,6 +9,7 @@ public class Main {
 
         float[] list;
         int count = 21; //Number of times running calculations
+        int cores = 2; // Number of cores
         long[] result = new long[count];
 
         for(int i = 0; i < count; i++){
@@ -17,7 +18,6 @@ public class Main {
             MergeSort2 ms = new MergeSort2(list,0, list.length);
             garbage();
             System.out.println("calculating: " +i);
-            result[i] = ms.sort(2); //specify no of cores
             System.out.println("calculation done");
             System.out.println((float)result[i]/1000000000);
 
