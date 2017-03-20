@@ -6,9 +6,9 @@ import javafx.scene.control.*;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.*;
 import sample.Model.*;
 import sample.Model.Shape;
 
@@ -28,11 +28,15 @@ public class DrawView extends CanvasView implements Observer{
     private ColorPicker colorPicker;
     private Button penButton, lineButton, ovalButton, rectangleButton, cursorButton;
     private CheckBox fillCheckBox;
-    private Shape currentShape;
     private Button editButton;
     private DrawDocument drawDocument;
     private UndoMenu undoMenu;
     private RedoMenu redoMenu;
+    //shapes:
+    private Shape currentShape;
+    private CirclePrototype circlePrototype;
+    private RectanglePrototype rectanglePrototype;
+    private LinePrototype linePrototype;
 
     public DrawView(DrawDocument drawDocument)
     {
@@ -40,7 +44,9 @@ public class DrawView extends CanvasView implements Observer{
         this.drawDocument = drawDocument;
         undoMenu = new UndoMenu();
         redoMenu = new RedoMenu();
-
+        circlePrototype = new CircleShape();
+        rectanglePrototype = new RectangleShape();
+        linePrototype = new SingleLine();
         this.centerPane = new VBox();
 
         drawDocument.attach(this);
@@ -71,7 +77,7 @@ public class DrawView extends CanvasView implements Observer{
         //(redo)
         editMenuItems.get(1).setOnAction(e -> {
             if(!redoMenu.isEmpty()) {
-                EditCommand c = undoMenu.pop();
+                EditCommand c = redoMenu.pop();
                 c.redo();
                 undoMenu.push(c);
                 drawDocument.notifyAllObservers();
@@ -115,11 +121,8 @@ public class DrawView extends CanvasView implements Observer{
     {
         //items for toolbar:
         fillCheckBox = new CheckBox("Fill");
+        fillCheckBox.setDisable(true);
         cursorButton = new Button();
-        penButton = new Button();
-        lineButton = new Button();
-        ovalButton = new Button();
-        rectangleButton = new Button();
         colorPicker = new ColorPicker();
         colorPicker.setValue(Color.BLACK);
         widthSlider = new Slider(1,10,1);
@@ -133,7 +136,7 @@ public class DrawView extends CanvasView implements Observer{
             {
                 //currentShape.setColor(colorPicker.getValue());
                 //currentShape.setThickness(widthSlider.getValue());
-                currentShape.setFilled(fillCheckBox.isSelected());
+                //currentShape.setFilled(fillCheckBox.isSelected());
                 drawDocument.editDrawData(OGShape, currentShape);
             }
         });
@@ -145,19 +148,23 @@ public class DrawView extends CanvasView implements Observer{
             }
         });
 
-        ovalButton.setOnAction(e->{
-            currentShape = new CircleShape();
+        linePrototype.getLineButton().setOnAction(e -> {
+            currentShape = new SingleLine();
             editmode = false;
             editButton.setDisable(true);
+            fillCheckBox.setDisable(true);
         });
-        lineButton.setOnAction(e -> {
-            currentShape = new SingleLine();
+
+        rectanglePrototype.getRectangleButton().setOnAction(e->{
+            fillCheckBox.setDisable(false);
+            currentShape = new RectangleShape();
             editmode = false;
             editButton.setDisable(true);
         });
 
-        rectangleButton.setOnAction(e->{
-            currentShape = new RectangleShape();
+        circlePrototype.getOvalButton().setOnAction(event -> {
+            fillCheckBox.setDisable(false);
+            currentShape = new CircleShape();
             editmode = false;
             editButton.setDisable(true);
         });
@@ -168,12 +175,6 @@ public class DrawView extends CanvasView implements Observer{
             editButton.setDisable(false);
         });
 
-        fillCheckBox.setOnAction(e->{
-            if(currentShape!=null)
-            {
-                currentShape.setFilled(fillCheckBox.isSelected());
-            }
-        });
 
         widthSlider.valueProperty().addListener(e->{
             double value = widthSlider.getValue();
@@ -181,19 +182,19 @@ public class DrawView extends CanvasView implements Observer{
             widthSliderLabel.setText(valueStr);
             if(currentShape!=null)
             {
-                currentShape.setThickness(value);
+                currentShape.setStrokeWidth(value);
             }
         });
 
         //set icons to buttons:
         cursorButton.setGraphic(new ImageView("/sample/Resources/cursor.png"));
-        penButton.setGraphic(new ImageView("/sample/Resources/pen.png"));
-        lineButton.setGraphic(new ImageView("/sample/Resources/line.png"));
-        ovalButton.setGraphic(new ImageView("/sample/Resources/oval.png"));
-        rectangleButton.setGraphic(new ImageView("/sample/Resources/polygon.png"));
+        linePrototype.getLineButton().setGraphic(new ImageView("/sample/Resources/line.png"));
+        circlePrototype.getOvalButton().setGraphic(new ImageView("/sample/Resources/oval.png"));
+        rectanglePrototype.getRectangleButton().setGraphic(new ImageView("/sample/Resources/polygon.png"));
 
         //add items to toolbar:
-        toolBar.getItems().addAll(cursorButton, penButton,lineButton,ovalButton, rectangleButton, widthSlider, widthSliderLabel,colorPicker, fillCheckBox, editButton);
+        toolBar.getItems().addAll(cursorButton, circlePrototype.getOvalButton(), rectanglePrototype.getRectangleButton(), linePrototype.getLineButton(), fillCheckBox);
+        toolBar.getItems().addAll(widthSlider, widthSliderLabel,colorPicker, editButton);
     }
 
     private boolean editmode;
@@ -211,14 +212,10 @@ public class DrawView extends CanvasView implements Observer{
                 currentShape = OGShape = drawDocument.getShapeOfFigureShape(tmpShape);
 
             }else {
-                currentShape.setFilled(fillCheckBox.isSelected());
+                currentShape = configShape(currentShape, e);
                 currentShape.setColor(colorPicker.getValue());
-                currentShape.setThickness(widthSlider.getValue());
-
-                currentShape.setX(e.getX());
-                currentShape.setY(e.getY());
+                currentShape.setStrokeWidth(widthSlider.getValue());
             }
-
 
         });
 
@@ -230,15 +227,9 @@ public class DrawView extends CanvasView implements Observer{
             //System.out.println("Mouse released");
             if(!editmode)
             {
-                currentShape.setEnd(e.getX(), e.getY());
-                currentShape.setHeight(e.getY()-currentShape.getY());
-                currentShape.setWidth(e.getSceneX()-currentShape.getX());
-                currentShape.setRadius(Math.hypot(Math.abs(currentShape.getX()-e.getX()),Math.abs(currentShape.getY()-e.getY())));
-                System.out.println("AFTER current color: " + colorPicker.getValue() + " and shape color ="+currentShape.getColor());
-
+                currentShape = configShape(currentShape, e);
                 EditCommand c = drawDocument.writeDrawData(currentShape);
                 undoMenu.push(c);
-                drawDocument.writeDrawData(currentShape);
 
                 drawDocument.notifyAllObservers();
             }
@@ -249,6 +240,63 @@ public class DrawView extends CanvasView implements Observer{
 
         });
     }
+
+
+
+    private Shape configShape(Shape shape, MouseEvent e)
+    {
+        if(shape instanceof SingleLine)
+        {
+            System.out.println("******************eventType=" + e.getEventType());
+            if(e.getEventType() == e.MOUSE_PRESSED)
+            {
+                ((SingleLine) shape).setStartX(e.getX());
+                ((SingleLine) shape).setStartY(e.getY());
+            }
+            else if(e.getEventType() == e.MOUSE_RELEASED)
+            {
+                ((SingleLine) shape).setEndX(e.getX());
+                ((SingleLine) shape).setEndY(e.getY());
+            }
+
+        }
+        else if(shape instanceof RectangleShape)
+        {
+            RectangleShape r = ((RectangleShape) shape);
+            if(e.getEventType() == e.MOUSE_PRESSED)
+            {
+                //r.setFilled(fillCheckBox.isSelected());
+                r.setStartX(e.getX());
+                r.setStartY(e.getY());
+            }
+            else if(e.getEventType() == e.MOUSE_RELEASED)
+            {
+                r.setFilled(fillCheckBox.isSelected());
+                r.setHeight(e.getY()-r.getStartY());
+                r.setWidth(e.getSceneX()-r.getStartX());
+            }
+            shape = r;
+        }
+        else if(shape instanceof CircleShape)
+        {
+            CircleShape c = ((CircleShape) shape);
+            if(e.getEventType() == e.MOUSE_PRESSED)
+            {
+
+                c.setCenterX(e.getX());
+                c.setCenterY(e.getY());
+            }
+            else if(e.getEventType() == e.MOUSE_RELEASED)
+            {
+                c.setFilled(fillCheckBox.isSelected());
+                c.setRadius(Math.hypot(Math.abs(c.getCenterX()-e.getX()),Math.abs(c.getCenterY()-e.getY())));
+            }
+            shape = c;
+        }
+        return shape;
+    }
+
+
 
     @Override
     public void update() {

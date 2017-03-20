@@ -1,15 +1,12 @@
 package sample.Model;
 
-import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.Paint;
 import javafx.scene.shape.Circle;
-import javafx.scene.shape.Line;
 
 /**
  * Created by Teddy on 2017-03-08.
  */
-public class CircleShape extends Shape{
+public class CircleShape extends CirclePrototype{
     private Circle circle;
 
     public CircleShape() {
@@ -19,22 +16,21 @@ public class CircleShape extends Shape{
 
     private CircleShape(CircleShape circleShape)
     {
-        //System.out.println("circle: X= " + circleShape.getX()+ " Y="+circleShape.getY() + " w = " + circleShape.getWidth());
-        circle = new Circle(circleShape.getX(), circleShape.getY(),circleShape.getRadius());
+        super();
+        //System.out.println("circle: X= " + circleShape.getX()+ " Y="+circleShape.getY() + " w = " + circleShape.getStrokeWidth());
+        circle = new Circle(circleShape.getCenterX(), circleShape.getCenterY(),circleShape.getRadius());
         circle.setStroke(circleShape.getColor());
         circle.setFill(Color.TRANSPARENT);
-        circle.setStrokeWidth(circleShape.getThickness());
+        circle.setStrokeWidth(circleShape.getStrokeWidth());
         if(circleShape.isFilled())
         {
             circle.setFill(circleShape.getColor());
         }
 
-        this.thickness = circleShape.getThickness();
+        this.strokeWidth = circleShape.getStrokeWidth();
         this.color = circleShape.getColor();
-        this.startX = circleShape.startX;
-        this.startY = circleShape.startY;
-        this.endX = circleShape.endX;
-        this.endY = circleShape.endY;
+        this.centerX = circleShape.centerX;
+        this.centerY = circleShape.centerY;
         this.radius = circleShape.getRadius();
         this.isFilled = circleShape.isFilled;
     }
@@ -42,18 +38,15 @@ public class CircleShape extends Shape{
     @Override
     public javafx.scene.shape.Shape draw() {
 
-        //System.out.println("line2: X=" + line2.getStartX() + " Y="+ line2.getStartY() + " endX=" + line2.getEndX() + "  endY = " + line2.getEndY());
-        Circle c = new Circle(super.getX(), super.getY(), super.radius);
+        //System.out.println("line2: X=" + line2.getCenterX() + " Y="+ line2.getCenterY() + " endX=" + line2.getEndX() + "  endY = " + line2.getEndY());
+        Circle c = new Circle(super.getCenterX(), super.getCenterY(), super.radius);
         c.setStroke(super.getColor());
-        c.setStrokeWidth(super.getThickness());
+        c.setStrokeWidth(super.getStrokeWidth());
         c.setFill(Color.TRANSPARENT);
         if(super.isFilled())
         {
             c.setFill(super.getColor());
         }
-
-        //System.out.println("C : X= " + c.getCenterX()+ " Y="+c.getCenterY() + " w = " + c.getRadius());
-
         return c;
     }
 

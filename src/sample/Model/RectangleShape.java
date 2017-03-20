@@ -6,7 +6,7 @@ import javafx.scene.shape.Rectangle;
 /**
  * Created by Teddy on 2017-03-09.
  */
-public class RectangleShape extends Shape {
+public class RectangleShape extends RectanglePrototype {
     private Rectangle rectangle;
 
     public RectangleShape() {
@@ -16,16 +16,16 @@ public class RectangleShape extends Shape {
 
     private RectangleShape(RectangleShape rectangleShape)
     {
-        rectangle = new Rectangle(rectangleShape.getX(), rectangleShape.getY(),rectangleShape.getWidth(), rectangleShape.getHeight());
+        rectangle = new Rectangle(rectangleShape.getStartX(), rectangleShape.getStartY(),rectangleShape.getWidth(), rectangleShape.getHeight());
         rectangle.setStroke(rectangleShape.getColor());
-        rectangle.setStrokeWidth(rectangleShape.getThickness());
+        rectangle.setStrokeWidth(rectangleShape.getStrokeWidth());
         rectangle.setFill(Color.TRANSPARENT);
         if(rectangleShape.isFilled())
         {
             rectangle.setFill(rectangleShape.getColor());
         }
 
-        this.thickness = rectangleShape.getThickness();
+        this.strokeWidth = rectangleShape.getStrokeWidth();
         this.color = rectangleShape.getColor();
         this.startX = rectangleShape.startX;
         this.startY = rectangleShape.startY;
@@ -39,7 +39,7 @@ public class RectangleShape extends Shape {
 
         Rectangle r = new Rectangle(super.startX, super.startY,super.width, super.getHeight());
         r.setStroke(super.getColor());
-        r.setStrokeWidth(super.getThickness());
+        r.setStrokeWidth(super.getStrokeWidth());
         r.setFill(Color.TRANSPARENT);
         if(super.isFilled())
         {

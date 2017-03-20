@@ -35,7 +35,7 @@ public class DrawDocument extends Subject{
     {
         Shape tmp = shape.clone();
         System.out.println("WriteData: " + tmp.getColor());
-        //System.out.println("Tmp in writeDrawData: X=" + tmp.getX() + " Y="+ tmp.getY() + " endX=" + tmp.getEndX() + "  endY = " + tmp.getEndY() + "W ="+ tmp.getWidth() );
+        //System.out.println("Tmp in writeDrawData: X=" + tmp.getX() + " Y="+ tmp.getY() + " endX=" + tmp.getEndX() + "  endY = " + tmp.getEndY() + "W ="+ tmp.getStrokeWidth() );
         shapeList.add(tmp);
         EditCommand command = new AddDrawObject(this, tmp);
         return command;
@@ -99,10 +99,11 @@ public class DrawDocument extends Subject{
     {
         System.out.println("in getShapeIndx(javafx.scene.shape.Shape shape)");
         int i= 0;
+        System.out.println("shape= " + shape.toString());
         for(Shape s: this.shapeList)
         {
             System.out.println(s.toString() + " \n" +shape.toString());
-            if(s.toString().equals(shape.toString()))
+            if(s.draw().toString().equals(shape.toString()))
             {
                 System.out.println("getShape(scece.shape.Shape): s.draw =" + s.draw().toString() + "  shape.t=" + shape.toString() + " returning index=" + i);
                 return i;

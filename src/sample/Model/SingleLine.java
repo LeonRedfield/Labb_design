@@ -7,7 +7,7 @@ import javafx.scene.shape.Line;
 /**
  * Created by Teddy on 2017-03-08.
  */
-public class SingleLine extends Shape{
+public class SingleLine extends LinePrototype{
     Line line;
 
     public SingleLine() {
@@ -20,8 +20,8 @@ public class SingleLine extends Shape{
      */
     private SingleLine(SingleLine singleLine) {
         //System.out.println("singleLine: X=" + singleLine.getX() + " Y="+ singleLine.getY() + " endX=" + singleLine.getEndX() + "  endY = " + singleLine.getEndY());
-        line = new Line(singleLine.getX(), singleLine.getY(), singleLine.getEndX(), singleLine.getEndY());
-        line.setStrokeWidth(singleLine.getThickness());
+        line = new Line(singleLine.getStartX(), singleLine.getStartY(), singleLine.getEndX(), singleLine.getEndY());
+        line.setStrokeWidth(singleLine.getStrokeWidth());
         //System.out.println("Line: Color: " + singleLine.color);
         line.setStroke(singleLine.getColor());
         this.color = singleLine.getColor();
@@ -29,7 +29,7 @@ public class SingleLine extends Shape{
         this.startY = singleLine.startY;
         this.endX = singleLine.endX;
         this.endY = singleLine.endY;
-        this.thickness = singleLine.getThickness();
+        this.strokeWidth = singleLine.getStrokeWidth();
     }
 
     @Override
@@ -39,9 +39,9 @@ public class SingleLine extends Shape{
         line2.setStartY(super.startY);
         line2.setEndX(super.endX);
         line2.setEndY(super.endY);
-        line2.setStrokeWidth(super.getThickness());
+        line2.setStrokeWidth(super.getStrokeWidth());
         line2.setStroke(super.getColor());
-        //System.out.println("line2: X=" + line2.getStartX() + " Y="+ line2.getStartY() + " endX=" + line2.getEndX() + "  endY = " + line2.getEndY());
+        //System.out.println("line2: X=" + line2.getCenterX() + " Y="+ line2.getCenterY() + " endX=" + line2.getEndX() + "  endY = " + line2.getEndY());
         return line2;
     }
 

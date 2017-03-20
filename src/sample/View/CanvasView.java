@@ -51,7 +51,7 @@ abstract public class CanvasView{
     private void setComputerScreenSize()
     {
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        System.out.println("width: " +screenSize.getWidth() + " height: " +screenSize.getHeight());
+        System.out.println("strokeWidth: " +screenSize.getWidth() + " height: " +screenSize.getHeight());
         // takes computers size and
         this.windowWidth = screenSize.getWidth()/1.5;
         this.windowHeight = screenSize.getHeight()/1.5;
