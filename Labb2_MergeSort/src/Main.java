@@ -8,14 +8,16 @@ public class Main {
     public static void main(String args[]){
 
         float[] list;
-        int count = 21; //Number of times running calculations
-        int cores = 2; // Number of cores
+        int count = 3; //Number of times running calculations
+        int cores = 4; // Number of cores
         long[] result = new long[count];
+
+        MergeSort2 ms = null;
 
         for(int i = 0; i < count; i++){
             System.out.println("generating...");
             list = generateList();
-            MergeSort2 ms = new MergeSort2(list,0, list.length);
+            ms = new MergeSort2(list,0, list.length);
             garbage();
             System.out.println("calculating: " +i);
             result[i] = ms.sort(cores); //specify no of cores
@@ -28,12 +30,15 @@ public class Main {
             r = r +result[i];
         }
         System.out.println("Genomsnitt: " +(r/(count-1))/1000000000);
-        //float[] result = ms.result();
-/*
-        for(int i = 0; i < result.length; i++) {
-            System.out.println(result[i]);
+/*        float[] result2 = ms.result();
+
+        for(int i = 0; i < result2.length-1; i++) {
+            if(result2[i] > result2[i+1]) {
+                System.out.println("Algorithm error");
+            }
+
         }
-  */
+*/
 
     }
     private static float[] generateList(){

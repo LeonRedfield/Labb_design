@@ -31,7 +31,7 @@ public class MergeSort2 extends RecursiveAction{
         this.startTime = System.nanoTime();
         ForkJoinPool joinPool = new ForkJoinPool(cores);
         joinPool.invoke(this);
-        Arrays.parallelSort(mSource, 0, mLength);
+        //Arrays.parallelSort(mSource, 0, mLength);
         this.stopTime = System.nanoTime();
         return stopTime - startTime;
 
@@ -75,25 +75,28 @@ public class MergeSort2 extends RecursiveAction{
         return new int[] {left[0], totalSize};
     }
 
-    protected static int sThreshold = 7000;
+    protected static int sThreshold = 10000;
     public void setThreshold(int t){
         sThreshold = t;
     }
 
     @Override
     protected void compute() {
-        //System.out.println("compute " +mLength);
         if(mLength < sThreshold) {
-            return;
+            if(mLength > 1)
+                Arrays.sort(mSource, mStart, mStart+mLength);
+
         }
         else {
             int leftSplit = mLength / 2;
             int rightSplit = mLength / 2;
-            //if(mLength%2 == 1)
-                //rightSplit++;
+            if(mLength%2 == 1)
+                rightSplit++;
             MergeSort2 left = new MergeSort2(mSource, mStart, leftSplit);
-            MergeSort2 right = new MergeSort2(mSource, mStart + rightSplit, rightSplit);
+            MergeSort2 right = new MergeSort2(mSource, mStart+leftSplit, rightSplit);
             invokeAll(left, right);
+            merge(new int[]{mStart, leftSplit}, new int[]{mStart+leftSplit, rightSplit});
+
 
         }
     }
